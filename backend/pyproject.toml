@@ -1,0 +1,12 @@
+[project]
+name = "modo-pato-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0",
+    "djangorestframework>=3.15",
+    "djangorestframework-simplejwt>=5.3",
+    "django-cors-headers>=4.3",
+    "psycopg[binary]>=3.1",
+    "django-environ>=0.11",
+]
