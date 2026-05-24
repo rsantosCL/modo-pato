@@ -8,9 +8,11 @@ Greenfield project — pre-Phase 0 of the implementation plan (SPEC.md Appendix 
 
 ## Entry Points & Contracts
 
-- `docker compose up` — runs Postgres 16 + Django dev server (`:8000`) + Vite dev server (`:5173`)
+- `docker compose up` — runs Postgres 16 + Django api (`:8000`) + Django admin (`:8001`) + Vite (`:5173`). Backend and admin share one image; service split is by `DJANGO_URLCONF` env (api → `config.urls_api` at `/v1/...`, admin → `config.urls_admin` at `/`).
 - `docs/SPEC.md` — functional spec v1.9: domain model, algorithms, validation rules. The design contract.
-- `docs/DEPLOYMENT.md` — infra plan: Hetzner VPS, Cloudflare Tunnel/Pages, Neon Postgres, R2 backups.
+- `docs/DEPLOYMENT.md` — infra plan: Hetzner VPS, Cloudflare Tunnel/Pages/Access, Neon Postgres, R2 backups.
+- `ROADMAP.md` — versioned step plan from 0.0.1 (baseline) to 1.0.0 (production); each step is a minor bump in lockstep across backend + frontend.
+- `V1-IMPLEMENTATION-PLAN.md` — agent execution companion to ROADMAP.md.
 
 ## Anti-patterns
 

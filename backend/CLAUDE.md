@@ -9,9 +9,12 @@ Does NOT handle: user-facing rendering (frontend), static hosting in production 
 
 ## Entry Points & Contracts
 
-- `GET /api/v1/health/` — only endpoint, defined in `config/urls.py`
-- Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`
-- Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen` in Docker
+- Two URL configurations selected by `DJANGO_URLCONF` env var:
+  - `config.urls_api` (api service, port 8000) — `GET /v1/health/` (+ future `/v1/...` routes). Default when env unset.
+  - `config.urls_admin` (admin service, port 8001) — Django admin mounted at `/`. Production: `admin.modo-pato.rsantos.cl` gated by Cloudflare Access.
+- Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DJANGO_URLCONF`.
+- Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen` in Docker.
+- Tests: `pytest` + `pytest-django` (Django's unittest runner is not used).
 
 ## Anti-patterns
 
@@ -21,3 +24,4 @@ Does NOT handle: user-facing rendering (frontend), static hosting in production 
 - Don't duplicate catalog items for time-varying values — use `CatalogItemRevision` with `effective_from_month` (§5.1, §13.5).
 - Production Docker images must target `linux/arm64` (Hetzner CAX11 ARM VPS).
 - Carry-over and balance math use raw per-item sums, never Resumen-smoothed values (§11.2).
+- Don't add api and admin routes to the same URLconf — keep them isolated by service so an outage in one doesn't touch the other; admin auth is enforced by Cloudflare Access at the subdomain, not by path rules.
