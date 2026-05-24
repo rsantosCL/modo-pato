@@ -13,7 +13,7 @@ Does NOT handle: user-facing rendering (frontend), static hosting in production 
   - `config.urls_api` (api service, port 8000) — `GET /v1/health/` (+ future `/v1/...` routes). Default when env unset.
   - `config.urls_admin` (admin service, port 8001) — Django admin mounted at `/`. Production: `admin.modo-pato.rsantos.cl` gated by Cloudflare Access.
 - Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DJANGO_URLCONF`.
-- Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen` in Docker.
+- Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen --all-groups` in Docker (dev deps, including pytest, are installed in the image — acceptable for this project's scale).
 - Tests: `pytest` + `pytest-django` (Django's unittest runner is not used).
 
 ## Anti-patterns

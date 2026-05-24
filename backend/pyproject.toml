@@ -25,4 +25,8 @@ testpaths = ["tests"]
 addopts = "--cov=. --cov-report=term-missing --cov-report=html:htmlcov"
 
 [tool.coverage.run]
+branch = true
 omit = ["tests/*", "manage.py", "*/migrations/*", "*/wsgi.py"]
+
+[tool.coverage.report]
+fail_under = 90

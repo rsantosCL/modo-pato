@@ -8,8 +8,9 @@ export default mergeConfig(viteConfig, defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,vue}'],
-      exclude: ['src/vite-env.d.ts'],
+      exclude: ['src/vite-env.d.ts', 'src/main.ts'],
       reporter: ['text', 'html'],
+      thresholds: { branches: 90, functions: 90, lines: 90, statements: 90 },
     },
   },
 }))

@@ -9,6 +9,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
+RUN uv sync --frozen --all-groups
 
 COPY . .
