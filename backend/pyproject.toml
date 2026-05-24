@@ -1,6 +1,6 @@
 [project]
 name = "modo-pato-backend"
-version = "0.0.1"
+version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.0",
@@ -10,3 +10,19 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "django-environ>=0.11",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.9",
+    "pytest-cov>=6.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = "tests.py test_*.py *_tests.py"
+testpaths = ["tests"]
+addopts = "--cov=. --cov-report=term-missing --cov-report=html:htmlcov"
+
+[tool.coverage.run]
+omit = ["tests/*", "manage.py", "*/migrations/*", "*/wsgi.py"]
