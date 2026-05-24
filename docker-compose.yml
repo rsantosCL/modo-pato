@@ -18,6 +18,8 @@ services:
   backend:
     build: ./backend
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      DJANGO_URLCONF: config.urls_api
     volumes:
       - ./backend:/app
     ports:
@@ -28,9 +30,28 @@ services:
       db:
         condition: service_healthy
 
+  admin:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8001
+    environment:
+      DJANGO_URLCONF: config.urls_admin
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
   frontend:
     build: ./frontend
     command: npm run dev
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
     volumes:
       - ./frontend:/app
       - /app/node_modules
