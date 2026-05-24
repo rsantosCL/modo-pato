@@ -7,37 +7,41 @@ modo-pato is a personal/family budget app (Django + Vue 3 + PostgreSQL). The goa
 - **Domain:** `rsantos.cl` (already on Cloudflare DNS)
 - **Frontend URL:** `modo-pato.rsantos.cl`
 - **API URL:** `api.modo-pato.rsantos.cl`
+- **Admin URL:** `admin.modo-pato.rsantos.cl` (Django admin at root, gated by Cloudflare Access)
 - **VPS:** Hetzner CAX11 (ARM, ~€3.79/mo)
 
 ## Final Architecture
 
 ```
                     Cloudflare Network
-                   ┌─────────────────────────────────────────────┐
-                   │                                             │
-User (Chile) ──────┤  Cloudflare Pages ── modo-pato.rsantos.cl   │
-                   │  (Vue 3 SPA)                                │
-                   │                                             │
-                   │  Cloudflare Tunnel ── api.modo-pato.rsantos.cl │
-                   │       │                                     │
-                   └───────┼─────────────────────────────────────┘
+                   ┌──────────────────────────────────────────────────┐
+                   │                                                  │
+User (Chile) ──────┤  Cloudflare Pages ── modo-pato.rsantos.cl        │
+                   │  (Vue 3 SPA)                                     │
+                   │                                                  │
+                   │  Cloudflare Tunnel ── api.modo-pato.rsantos.cl   │
+                   │                  └── admin.modo-pato.rsantos.cl  │
+                   │                     (gated by CF Access)         │
+                   └──────────────────────────────────────────────────┘
                            │ (outbound tunnel, no open ports)
                            │
                    ┌───────▼─────────────────────────────────────┐
-                   │  Hetzner VPS (Ashburn, US-East)              │
-                   │  ┌─────────────┐  ┌──────────────────┐      │
-                   │  │ cloudflared │  │ Docker            │      │
-                   │  │ (systemd)   │  │  └─ gunicorn      │      │
-                   │  └─────────────┘  │     (Django API)  │      │
-                   │                   └──────────────────┘      │
+                   │  Hetzner VPS (Ashburn, US-East)             │
+                   │  ┌─────────────┐  ┌──────────────────────┐  │
+                   │  │ cloudflared │  │ Docker               │  │
+                   │  │ (systemd)   │  │  ├─ backend (api)    │  │
+                   │  └─────────────┘  │  │    :8000 gunicorn │  │
+                   │                   │  └─ admin            │  │
+                   │                   │      :8001 gunicorn  │  │
+                   │                   └──────────────────────┘  │
                    │  ┌──────────────────────────────────┐       │
                    │  │ Cron: pg_dump → rclone → R2      │       │
                    │  └──────────────────────────────────┘       │
                    └─────────────────────────────────────────────┘
                            │
                    ┌───────▼─────────────────────────────────────┐
-                   │  Neon PostgreSQL (AWS us-east-1)             │
-                   │  Free tier, ~2-4ms from Hetzner Ashburn      │
+                   │  Neon PostgreSQL (AWS us-east-1)            │
+                   │  Free tier, ~2-4ms from Hetzner Ashburn     │
                    └─────────────────────────────────────────────┘
 
 Backups: Cloudflare R2 (free, 10GB)
@@ -55,21 +59,24 @@ These steps must be done manually before any automation works.
 
 ### 1.1 Neon (Database)
 
-1. Go to https://neon.tech → Sign up / Log in
+1. Go to <https://neon.tech> → Sign up / Log in
 2. Create a new project:
    - Name: `modo-pato`
    - Region: **AWS us-east-1 (N. Virginia)** — co-located with Hetzner Ashburn
    - Postgres version: 16
 3. Copy the connection string. It looks like:
+
    ```
    postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/modopato?sslmode=require
    ```
+
    **Important:** `?sslmode=require` is mandatory — Neon rejects non-SSL connections.
+
 4. Save this as your production `DATABASE_URL`.
 
 ### 1.2 Hetzner (VPS)
 
-1. Go to https://console.hetzner.cloud → Sign up / Log in
+1. Go to <https://console.hetzner.cloud> → Sign up / Log in
 2. Create a new project: `modo-pato`
 3. Add your SSH public key (Settings → SSH Keys)
 4. Create a server:
@@ -91,13 +98,34 @@ These steps must be done manually before any automation works.
 3. Name: `modo-pato`
 4. Copy the tunnel token (a long string starting with `eyJ...`)
 5. Skip the connector install step (we'll do it on the VPS later)
-6. Add a **Public Hostname**:
-   - Subdomain: `api.modo-pato`
-   - Domain: `rsantos.cl`
-   - Service: `http://localhost:8000`
+6. Add two **Public Hostnames** (API and admin route to different backend ports):
+   - First:
+     - Subdomain: `api.modo-pato`
+     - Domain: `rsantos.cl`
+     - Service: `http://localhost:8000`
+   - Second:
+     - Subdomain: `admin.modo-pato`
+     - Domain: `rsantos.cl`
+     - Service: `http://localhost:8001`
 7. Save the tunnel
 
-This creates a DNS CNAME record for `api.modo-pato.rsantos.cl` automatically.
+This creates DNS CNAME records for `api.modo-pato.rsantos.cl` and `admin.modo-pato.rsantos.cl` automatically.
+
+#### 1.3.1.1 Cloudflare Access (gate the admin subdomain)
+
+Cloudflare Access is free for ≤50 users and is the gate that prevents anyone but the operator from reaching Django admin.
+
+1. Go to **Zero Trust** → **Access** → **Applications** → **Add an application**
+2. Choose **Self-hosted**
+3. Configure:
+   - Application name: `modo-pato admin`
+   - Application domain: `admin.modo-pato.rsantos.cl`
+   - Session duration: 24 hours (or your preference)
+4. Create an **Access policy**:
+   - Name: `operator-only`
+   - Action: **Allow**
+   - Include rule: **Emails** → your email address
+5. Save. Test by hitting `https://admin.modo-pato.rsantos.cl/` — Cloudflare should challenge for authentication before forwarding to Django.
 
 #### 1.3.2 Cloudflare Pages (Frontend)
 
@@ -130,11 +158,11 @@ This creates a DNS CNAME record for `api.modo-pato.rsantos.cl` automatically.
 
 Go to your repo → **Settings** → **Secrets and variables** → **Actions** → add these secrets:
 
-| Secret | Value | Used by |
-|--------|-------|---------|
-| `VPS_HOST` | Hetzner server IP | Backend deploy workflow |
+| Secret        | Value                                                   | Used by                 |
+| ------------- | ------------------------------------------------------- | ----------------------- |
+| `VPS_HOST`    | Hetzner server IP                                       | Backend deploy workflow |
 | `VPS_SSH_KEY` | Private SSH key (the pair of what you added to Hetzner) | Backend deploy workflow |
-| `VPS_USER` | `deploy` (we'll create this user on the VPS) | Backend deploy workflow |
+| `VPS_USER`    | `deploy` (we'll create this user on the VPS)            | Backend deploy workflow |
 
 ---
 
@@ -157,6 +185,7 @@ chown -R deploy:deploy /home/deploy/.ssh
 ### 2.2 Harden SSH
 
 Edit `/etc/ssh/sshd_config`:
+
 ```
 Port 2222
 PermitRootLogin no
@@ -164,6 +193,7 @@ PasswordAuthentication no
 PubkeyAuthentication yes
 AllowUsers deploy
 ```
+
 Then: `systemctl restart sshd`
 
 **Update `VPS_HOST` in GitHub secrets if you change the SSH port** (the workflow uses port 2222).
@@ -194,6 +224,7 @@ apt update && apt install -y cloudflared
 ```
 
 Configure the tunnel:
+
 ```bash
 mkdir -p /etc/cloudflared
 cat > /etc/cloudflared/config.yml << 'EOF'
@@ -202,11 +233,14 @@ credentials-file: /etc/cloudflared/credentials.json
 ingress:
   - hostname: api.modo-pato.rsantos.cl
     service: http://localhost:8000
+  - hostname: admin.modo-pato.rsantos.cl
+    service: http://localhost:8001
   - service: http_status:404
 EOF
 ```
 
 Install the token (from step 1.3.1):
+
 ```bash
 cloudflared service install <TUNNEL_TOKEN>
 systemctl enable cloudflared
@@ -220,6 +254,7 @@ curl https://rclone.org/install.sh | bash
 ```
 
 Configure R2 remote:
+
 ```bash
 mkdir -p /home/deploy/.config/rclone
 cat > /home/deploy/.config/rclone/rclone.conf << EOF
@@ -243,15 +278,17 @@ cat > /home/deploy/modo-pato/.env << EOF
 DATABASE_URL=postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/modopato?sslmode=require
 SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
 DEBUG=False
-ALLOWED_HOSTS=api.modo-pato.rsantos.cl
+ALLOWED_HOSTS=api.modo-pato.rsantos.cl,admin.modo-pato.rsantos.cl
 CORS_ALLOWED_ORIGINS=https://modo-pato.rsantos.cl
-CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl
+CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl,https://admin.modo-pato.rsantos.cl
 EOF
 chown deploy:deploy /home/deploy/modo-pato/.env
 chmod 600 /home/deploy/modo-pato/.env
 ```
 
 ### 2.8 Create production docker-compose
+
+Two services from the same image — one serves the API (`urls_api`, port 8000), one serves Django admin (`urls_admin`, port 8001).
 
 ```bash
 cat > /home/deploy/modo-pato/docker-compose.prod.yml << 'EOF'
@@ -260,6 +297,8 @@ services:
     image: ghcr.io/<GITHUB_USER>/modo-pato-backend:latest
     restart: unless-stopped
     env_file: .env
+    environment:
+      DJANGO_URLCONF: config.urls_api
     ports:
       - "127.0.0.1:8000:8000"
     command: >
@@ -269,11 +308,27 @@ services:
       --timeout 120
       --access-logfile -
       --error-logfile -
+
+  admin:
+    image: ghcr.io/<GITHUB_USER>/modo-pato-backend:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_URLCONF: config.urls_admin
+    ports:
+      - "127.0.0.1:8001:8001"
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8001
+      --workers 1
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
 EOF
 chown deploy:deploy /home/deploy/modo-pato/docker-compose.prod.yml
 ```
 
-Note: port binds to `127.0.0.1` only — accessible to cloudflared but not from the internet.
+Note: ports bind to `127.0.0.1` only — accessible to cloudflared but not from the internet. The admin service uses 1 worker (low traffic, single operator). Migrations are not run from these services in prod — see Phase 5 / amend the deploy workflow to run `docker compose exec backend python manage.py migrate` as a separate step if a release contains a migration.
 
 ### 2.9 Set up backup cron
 
@@ -302,11 +357,13 @@ chown deploy:deploy /home/deploy/backup.sh
 ```
 
 Install `postgresql-client` for `pg_dump`:
+
 ```bash
 apt install -y postgresql-client-16
 ```
 
 Add to deploy user's crontab:
+
 ```bash
 su - deploy -c 'crontab -l 2>/dev/null; echo "0 2 * * * /home/deploy/backup.sh >> /home/deploy/backup.log 2>&1"' | crontab -u deploy -
 ```
@@ -340,6 +397,7 @@ These modifications prepare the codebase for production deployment.
 **File: `backend/pyproject.toml`** — add `whitenoise>=6.5` to `[project.dependencies]`.
 
 **File: `backend/config/settings.py`** — changes:
+
 - Add `STATIC_ROOT = BASE_DIR / 'staticfiles'`
 - Add `'whitenoise.middleware.WhiteNoiseMiddleware'` after `SecurityMiddleware`
 - Add `STORAGES` config for whitenoise compressed manifest
@@ -348,19 +406,21 @@ These modifications prepare the codebase for production deployment.
 ### 3.3 Update backend Dockerfile for production
 
 **File: `backend/Dockerfile`** — add:
+
 - `RUN python manage.py collectstatic --noinput` at build time
 - Expose port 8000
 - Default CMD with gunicorn
 
 ### 3.4 Frontend API base URL
 
-**File: `frontend/src/api.js`** (new) — create a small API client that reads `import.meta.env.VITE_API_BASE_URL` for the base URL. In dev this falls back to empty string (proxy handles it), in production it points to `https://api.modo-pato.rsantos.cl`.
+**File: `frontend/src/api.ts`** (new) — create a small TypeScript API client that reads `import.meta.env.VITE_API_BASE_URL` for the base URL. In dev this resolves to `http://localhost:8000` (from `.env`); in production Cloudflare Pages builds with `VITE_API_BASE_URL=https://api.modo-pato.rsantos.cl`. No Vite proxy: the browser hits the API host directly; CORS is configured to allow it.
 
 ### 3.5 Update .env.example
 
 **File: `.env.example`** — add production-relevant vars:
+
 ```
-CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl
+CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl,https://admin.modo-pato.rsantos.cl
 ```
 
 ---
@@ -378,9 +438,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/**'
-      - 'deploy/**'
-      - '.github/workflows/deploy-backend.yml'
+      - "backend/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-backend.yml"
 
 env:
   REGISTRY: ghcr.io
@@ -451,23 +511,38 @@ jobs:
 
 After everything is deployed, verify each layer:
 
-### 5.1 Tunnel + Backend
+### 5.1 Tunnel + Backend (API)
+
 ```bash
-curl https://api.modo-pato.rsantos.cl/api/v1/health/
+curl https://api.modo-pato.rsantos.cl/v1/health/
 # Expected: {"status":"ok"}
 ```
 
+### 5.1.1 Tunnel + Admin (Cloudflare Access gated)
+
+```bash
+curl -I https://admin.modo-pato.rsantos.cl/
+# Expected: 302 redirect to the Cloudflare Access login challenge,
+# NOT a direct 302 to Django's /login/. If you see Django's login
+# page, Cloudflare Access is not enforcing — fix §1.3.1.1.
+```
+
+After authenticating in a browser, `https://admin.modo-pato.rsantos.cl/` should serve Django's admin login page.
+
 ### 5.2 Frontend
+
 - Open `https://modo-pato.rsantos.cl` in browser
 - Check browser DevTools → Network tab: API calls should go to `api.modo-pato.rsantos.cl`
 
 ### 5.3 Firewall (from any external machine)
+
 ```bash
 nmap <HETZNER_IP>
 # Expected: only port 2222 (SSH) open. No 80, 443, 8000.
 ```
 
 ### 5.4 Backup
+
 ```bash
 # On VPS, as deploy user:
 ./backup.sh
@@ -481,6 +556,7 @@ pg_restore --clean --if-exists --no-owner -d "postgresql://local_user:pass@local
 ```
 
 ### 5.5 CI/CD
+
 - Push a change to `backend/` → GitHub Actions should build, push image, SSH deploy
 - Push a change to `frontend/` → Cloudflare Pages should auto-build and deploy
 - Verify both complete successfully
@@ -490,25 +566,29 @@ pg_restore --clean --if-exists --no-owner -d "postgresql://local_user:pass@local
 ## Summary of Files to Create/Modify
 
 ### Code changes
-| File | Action | Purpose |
-|------|--------|---------|
-| `backend/pyproject.toml` | Modify | Add gunicorn, whitenoise |
-| `backend/Dockerfile` | Modify | Add collectstatic, CMD with gunicorn |
+
+| File                         | Action | Purpose                                           |
+| ---------------------------- | ------ | ------------------------------------------------- |
+| `backend/pyproject.toml`     | Modify | Add gunicorn, whitenoise                          |
+| `backend/Dockerfile`         | Modify | Add collectstatic, CMD with gunicorn              |
 | `backend/config/settings.py` | Modify | Add whitenoise, STATIC_ROOT, CSRF_TRUSTED_ORIGINS |
-| `frontend/src/api.js` | Create | API base URL from env var |
-| `.env.example` | Modify | Add production vars |
+| `frontend/src/api.js`        | Create | API base URL from env var                         |
+| `.env.example`               | Modify | Add production vars                               |
 
 ### Deployment files (tracked in repo under `deploy/`)
 
-**`deploy/docker-compose.prod.yml`** — production compose file (backend only, no DB):
+**`deploy/docker-compose.prod.yml`** — production compose file (api + admin, no DB):
+
 ```yaml
 services:
   backend:
     image: ghcr.io/<GITHUB_USER>/modo-pato-backend:latest
     restart: unless-stopped
-    env_file: .env                    # reads secrets from VPS-local .env (never tracked)
+    env_file: .env # reads secrets from VPS-local .env (never tracked)
+    environment:
+      DJANGO_URLCONF: config.urls_api
     ports:
-      - "127.0.0.1:8000:8000"        # localhost only — cloudflared proxies to this
+      - "127.0.0.1:8000:8000" # localhost only — cloudflared proxies to this
     command: >
       gunicorn config.wsgi:application
       --bind 0.0.0.0:8000
@@ -516,9 +596,26 @@ services:
       --timeout 120
       --access-logfile -
       --error-logfile -
+
+  admin:
+    image: ghcr.io/<GITHUB_USER>/modo-pato-backend:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_URLCONF: config.urls_admin
+    ports:
+      - "127.0.0.1:8001:8001"
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8001
+      --workers 1
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
 ```
 
 **`deploy/backup.sh`** — daily pg_dump → R2 script:
+
 ```bash
 #!/bin/bash
 set -euo pipefail
@@ -531,6 +628,7 @@ echo "[$(date)] Backup complete: ${DATE}/${FILENAME}"
 ```
 
 **`deploy/cloudflared.yml`** — tunnel ingress config (tunnel ID is injected on the VPS, not stored here):
+
 ```yaml
 # Copied to /etc/cloudflared/config.yml on the VPS
 # tunnel: <set during provisioning>
@@ -538,10 +636,13 @@ echo "[$(date)] Backup complete: ${DATE}/${FILENAME}"
 ingress:
   - hostname: api.modo-pato.rsantos.cl
     service: http://localhost:8000
+  - hostname: admin.modo-pato.rsantos.cl
+    service: http://localhost:8001
   - service: http_status:404
 ```
 
 **`deploy/provision.sh`** — one-time VPS setup script. Contains:
+
 - Create `deploy` user + SSH key setup
 - Harden SSH (port 2222, key-only, no root login)
 - Configure UFW firewall (allow SSH only, no HTTP ports)
@@ -554,24 +655,25 @@ ingress:
 - Placeholder prompts for secrets (DATABASE_URL, SECRET_KEY, tunnel token, R2 keys) that the operator fills in manually
 
 **`deploy/.env.example`** — documents required production env vars (no real values):
+
 ```
 DATABASE_URL=postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/dbname?sslmode=require
 SECRET_KEY=generate-a-random-secret-key
 DEBUG=False
-ALLOWED_HOSTS=api.modo-pato.rsantos.cl
+ALLOWED_HOSTS=api.modo-pato.rsantos.cl,admin.modo-pato.rsantos.cl
 CORS_ALLOWED_ORIGINS=https://modo-pato.rsantos.cl
-CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl
+CSRF_TRUSTED_ORIGINS=https://api.modo-pato.rsantos.cl,https://admin.modo-pato.rsantos.cl
 ```
 
 **`.github/workflows/deploy-backend.yml`** — CI/CD pipeline (detailed in Phase 4 above)
 
 ### Never tracked (secrets — live only on VPS or in GitHub Secrets)
 
-| Data | Where it lives |
-|------|---------------|
+| Data                                                  | Where it lives                    |
+| ----------------------------------------------------- | --------------------------------- |
 | `DATABASE_URL` (Neon connection string with password) | VPS `/home/deploy/modo-pato/.env` |
-| `SECRET_KEY` (Django signing key) | VPS `.env` |
-| Cloudflare tunnel token | VPS systemd service config |
-| R2 API keys (access key + secret) | VPS rclone config |
-| SSH private key | GitHub Secrets + local machine |
-| VPS IP address | GitHub Secrets (`VPS_HOST`) |
+| `SECRET_KEY` (Django signing key)                     | VPS `.env`                        |
+| Cloudflare tunnel token                               | VPS systemd service config        |
+| R2 API keys (access key + secret)                     | VPS rclone config                 |
+| SSH private key                                       | GitHub Secrets + local machine    |
+| VPS IP address                                        | GitHub Secrets (`VPS_HOST`)       |
