@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'core',
     'accounts',
+    'ledgers',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
