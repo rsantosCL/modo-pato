@@ -30,9 +30,13 @@ ssh service:
 test-backend:
   docker compose run --rm backend uv run pytest
 
+# Run Django makemigrations
+makemigrations app:
+  docker compose run --rm backend python manage.py makemigrations {{ app }}
+
 # Run Django migrations
-migrate:
-  docker compose run --rm backend python manage.py migrate
+migrate app="":
+  docker compose run --rm backend python manage.py migrate {{ app }}
 
 # Create a Django superuser
 createsuperuser:
