@@ -8,6 +8,7 @@ Greenfield project — pre-Phase 0 of the implementation plan (SPEC.md Appendix 
 
 ## Entry Points & Contracts
 
+- `just` — lists all dev shortcuts (`just up`, `just test`, `just migrate`, etc.). Wraps `docker compose` commands; prefer `just` over raw `docker compose` for common tasks.
 - `docker compose up` — runs Postgres 16 + Django api (`:8000`) + Django admin (`:8001`) + Vite (`:5173`). Backend and admin share one image; service split is by `DJANGO_URLCONF` env (api → `config.urls_api` at `/v1/...`, admin → `config.urls_admin` at `/`).
 - `docs/SPEC.md` — functional spec v1.9: domain model, algorithms, validation rules. The design contract.
 - `docs/DEPLOYMENT.md` — infra plan: Hetzner VPS, Cloudflare Tunnel/Pages/Access, Neon Postgres, R2 backups.
