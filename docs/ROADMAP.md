@@ -10,7 +10,7 @@ For per-phase implementation detail (backend / frontend file lists, library deci
 
 ---
 
-## 0.0.1 — Baseline (current)
+## 0.0.1 — Baseline
 
 Today's scaffolding, before any feature work:
 
@@ -42,7 +42,7 @@ No domain models, no business logic, no UI beyond the title.
 
 ---
 
-## 0.2.0 — Phase 0: Foundations
+## 0.2.0 — Phase 0: Foundations (current)
 
 **Goal:** Multi-user ledger access — sign in, create a ledger, invite a partner.
 
