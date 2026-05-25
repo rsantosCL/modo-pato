@@ -1,7 +1,5 @@
-# Modo Pato — dev commands
-# Run `just` to see available commands.
-
-default:
+# List all commands
+help:
   @just --list
 
 # ── Docker ────────────────────────────────────────────────────────────────────
