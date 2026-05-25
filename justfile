@@ -27,7 +27,7 @@ ssh service:
 # ── Backend ───────────────────────────────────────────────────────────────────
 
 # Run backend tests with branch coverage
-test-be:
+test-backend:
   docker compose run --rm backend uv run pytest
 
 # Run Django migrations
@@ -45,10 +45,10 @@ shell:
 # ── Frontend ──────────────────────────────────────────────────────────────────
 
 # Run frontend tests with branch coverage
-test-fe:
-  docker compose run --rm frontend npm run type-check && npm run test:coverage
+test-frontend:
+  docker compose run --rm frontend sh -c "npm run type-check && npm run test:coverage"
 
 # ── Combined ──────────────────────────────────────────────────────────────────
 
 # Run all tests (backend + frontend)
-test: test-be test-fe
+test: test-backend test-frontend
