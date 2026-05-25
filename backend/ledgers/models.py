@@ -20,6 +20,12 @@ class Ledger(UUIDModel):
     def __str__(self):
         return self.name
 
+    def membership_for(self, user) -> "LedgerMember | None":
+        try:
+            return self.members.get(user=user)
+        except LedgerMember.DoesNotExist:
+            return None
+
 
 class LedgerMember(models.Model):
     ledger = models.ForeignKey(Ledger, on_delete=models.CASCADE, related_name="members")
