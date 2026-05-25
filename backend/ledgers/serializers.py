@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from .enums import MemberRole
 from .models import Ledger, LedgerMember, InviteToken
 
 User = get_user_model()
@@ -31,4 +32,4 @@ class InviteTokenSerializer(serializers.ModelSerializer):
 
 
 class InviteCreateSerializer(serializers.Serializer):
-    role = serializers.ChoiceField(choices=LedgerMember.Role.choices, default=LedgerMember.Role.EDITOR)
+    role = serializers.ChoiceField(choices=MemberRole.choices, default=MemberRole.EDITOR)
