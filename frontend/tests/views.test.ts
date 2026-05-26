@@ -104,8 +104,7 @@ describe('LedgersView', () => {
     await flushPromises()
     await wrapper.find('button').trigger('click')
     expect(wrapper.find('form').exists()).toBe(true)
-    const buttons = wrapper.findAll('button')
-    await buttons[buttons.length - 1].trigger('click')
+    await wrapper.find('input[type="reset"]').trigger('click')
     expect(wrapper.find('form').exists()).toBe(false)
   })
 
