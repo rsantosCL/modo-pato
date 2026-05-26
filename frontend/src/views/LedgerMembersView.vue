@@ -12,11 +12,16 @@ const members = ref<LedgerMember[]>([])
 const inviteToken = ref('')
 const inviteRole = ref<LedgerMember['role']>('editor')
 const error = ref('')
+const loading = ref(true)
 
 const ledgerId = route.params.id as string
 
 onMounted(async () => {
-  members.value = await store.fetchMembers(ledgerId)
+  try {
+    members.value = await store.fetchMembers(ledgerId)
+  } finally {
+    loading.value = false
+  }
 })
 
 async function invite() {
@@ -34,22 +39,24 @@ async function invite() {
   <main>
     <section>
       <h2>{{ t('ledger.members') }}</h2>
-      <table v-if="members.length">
-        <thead>
-          <tr>
-            <th>{{ t('auth.displayName') }}</th>
-            <th>{{ t('auth.email') }}</th>
-            <th>{{ t('ledger.role') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in members" :key="m.user_id">
-            <td>{{ m.display_name }}</td>
-            <td>{{ m.email }}</td>
-            <td>{{ t(`ledger.role_${m.role}`) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div :aria-busy="loading">
+        <table v-if="!loading && members.length">
+          <thead>
+            <tr>
+              <th>{{ t('auth.displayName') }}</th>
+              <th>{{ t('auth.email') }}</th>
+              <th>{{ t('ledger.role') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in members" :key="m.user_id">
+              <td>{{ m.display_name }}</td>
+              <td>{{ m.email }}</td>
+              <td>{{ t(`ledger.role_${m.role}`) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section>

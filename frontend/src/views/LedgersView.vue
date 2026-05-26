@@ -10,8 +10,15 @@ const name = ref('')
 const kind = ref<Ledger['kind']>('personal')
 const error = ref('')
 const showForm = ref(false)
+const loading = ref(true)
 
-onMounted(() => store.fetchAll())
+onMounted(async () => {
+  try {
+    await store.fetchAll()
+  } finally {
+    loading.value = false
+  }
+})
 
 async function create() {
   error.value = ''
@@ -52,9 +59,9 @@ async function create() {
       </article>
     </section>
 
-    <section>
-      <p v-if="!store.ledgers.length">{{ t('ledger.noLedgers') }}</p>
-      <ul v-else>
+    <section :aria-busy="loading">
+      <p v-if="!loading && !store.ledgers.length">{{ t('ledger.noLedgers') }}</p>
+      <ul v-else-if="!loading">
         <li v-for="ledger in store.ledgers" :key="ledger.id">
           <router-link :to="`/ledgers/${ledger.id}`">{{ ledger.name }}</router-link>
           <small>

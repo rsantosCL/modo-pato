@@ -27,6 +27,10 @@ Inside `<main>`, content is grouped by semantic element:
 - **`<fieldset class="grid">`** — groups side-by-side form fields within a form.
 - Form submission: `<input type="submit" :value="t('...')">` and `<input type="reset" :value="t('...')" @click="...">` — never `<button type="submit">`.
 
+### Loading states
+
+Use Pico.css's `aria-busy` pattern — never render loading text. Add `const loading = ref(true)` in `<script setup>`, wrap the fetch in `onMounted` with `try/finally` to guarantee `loading.value = false` even on error, and bind `:aria-busy="loading"` on a `<div>` wrapping only the data-dependent content (not the section heading). Gate content inside with `v-if="!loading"`.
+
 ## Anti-patterns
 
 - Don't implement rounding or carry-over math client-side; backend is authoritative (SPEC.md §9.1).
