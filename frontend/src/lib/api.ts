@@ -1,3 +1,5 @@
+import router from '@/router'
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 
 export class ApiError extends Error {
@@ -6,7 +8,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function doRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('access_token')
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -23,6 +25,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (response.status === 204) return undefined as T
   return response.json()
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  try {
+    return await doRequest<T>(path, options)
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) {
+      try {
+        const { useAuthStore } = await import('@/stores/auth')
+        const auth = useAuthStore()
+        await auth.refresh()
+        return await doRequest<T>(path, options)
+      } catch {
+        const { useAuthStore } = await import('@/stores/auth')
+        useAuthStore().logout()
+        router.push('/login')
+        throw e
+      }
+    }
+    throw e
+  }
 }
 
 export const api = {

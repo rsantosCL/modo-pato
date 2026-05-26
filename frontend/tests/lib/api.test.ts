@@ -35,8 +35,8 @@ describe('api client', () => {
   it('throws ApiError on non-ok response', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
-      status: 401,
-      json: async () => ({ detail: 'Unauthorized' }),
+      status: 404,
+      json: async () => ({ detail: 'Not found' }),
     })
     await expect(api.get('v1/test/')).rejects.toThrow(ApiError)
   })

@@ -11,6 +11,7 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 - `src/main.ts` — mounts `App.vue` on `#app`. All SFCs use `<script setup lang="ts">`.
 - `vite.config.ts` — no dev proxy. The browser calls the API directly via `VITE_API_BASE_URL` (e.g. `http://localhost:8000` in dev, `https://api.modo-pato.rsantos.cl` in prod). CORS handles cross-origin.
+- `src/lib/api.ts` — all backend calls go through here. **401 responses are handled automatically**: the client attempts a token refresh once and retries; if the refresh also fails, it calls `auth.logout()` and redirects to `/login`. Views never need to handle 401s themselves.
 - Styling: **Pico.css** (classless, semantic HTML). Custom CSS only when Pico's defaults don't cover a case.
 - Type-checking via `vue-tsc --noEmit` (`npm run type-check`); runs in CI.
 
@@ -18,24 +19,11 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 ### Views structure
 
-`src/views/` is organized by domain subdirectory, mirroring backend Django apps as closely as possible:
-
-- `auth/` ↔ `accounts` app — login, signup
-- `ledgers/` ↔ `ledgers` app — ledger list, detail, members
-
-When a new backend app ships, create a matching subdirectory under `src/views/`. The `auth` exception (vs `accounts`) is intentional: the frontend only exposes authentication flows, not account management.
+`src/views/` mirrors backend Django apps: `auth/` ↔ `accounts`, `ledgers/` ↔ `ledgers`. New backend app → new subdirectory. `auth` (not `accounts`) is intentional — frontend only exposes auth flows.
 
 ### Test structure
 
-`tests/` mirrors `src/` directly — same subdirectory structure:
-
-- `tests/views/auth/`, `tests/views/ledgers/` — view tests, mirroring `src/views/`
-- `tests/stores/` — store tests, mirroring `src/stores/`
-- `tests/lib/` — lib tests, mirroring `src/lib/`
-- `tests/router/` — router tests, mirroring `src/router/`
-- `tests/App.test.ts` — mirrors `src/App.vue`
-
-When a new `src/<dir>/` is added, create a matching `tests/<dir>/`.
+`tests/` mirrors `src/` one-to-one. New `src/<dir>/` → new `tests/<dir>/`.
 
 ### View template structure
 
