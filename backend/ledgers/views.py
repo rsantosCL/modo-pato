@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from .enums import MemberRole
 from .models import Ledger, LedgerMember, InviteToken
 from .permissions import IsMember, IsOwnerOrEditor
-from .serializers import LedgerSerializer, InviteTokenSerializer, InviteCreateSerializer
+from .serializers import LedgerSerializer, LedgerMemberSerializer, InviteTokenSerializer, InviteCreateSerializer
 
 
 class LedgerListCreateView(generics.ListCreateAPIView):
@@ -31,6 +31,16 @@ class LedgerDetailView(generics.RetrieveUpdateAPIView):
         if self.request.method in ("PUT", "PATCH"):
             return [IsOwnerOrEditor()]
         return [IsMember()]
+
+
+class LedgerMembersView(generics.ListAPIView):
+    serializer_class = LedgerMemberSerializer
+
+    def get_queryset(self):
+        ledger = generics.get_object_or_404(Ledger, pk=self.kwargs["ledger_pk"])
+        if ledger.membership_for(self.request.user) is None:
+            raise PermissionDenied
+        return LedgerMember.objects.filter(ledger=ledger).select_related("user")
 
 
 class InviteCreateView(APIView):
