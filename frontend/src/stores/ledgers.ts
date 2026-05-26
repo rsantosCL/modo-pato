@@ -38,6 +38,7 @@ export const useLedgersStore = defineStore('ledgers', () => {
   }
 
   async function fetchMembers(id: string) {
+    if (activeLedger.value?.id !== id) await fetchOne(id)
     return api.get<LedgerMember[]>(`v1/ledgers/${id}/members/`)
   }
 
