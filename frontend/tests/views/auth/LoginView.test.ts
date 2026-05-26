@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import { createRouter, createMemoryHistory } from 'vue-router'
-import LoginView from '../src/views/LoginView.vue'
-import { useAuthStore } from '../src/stores/auth'
-import en from '../src/i18n/locales/en.json'
+import LoginView from '../../../src/views/auth/LoginView.vue'
+import { useAuthStore } from '../../../src/stores/auth'
+import en from '../../../src/i18n/locales/en.json'
 
 const i18n = createI18n({ legacy: false, locale: 'en', messages: { en } })
 const router = createRouter({

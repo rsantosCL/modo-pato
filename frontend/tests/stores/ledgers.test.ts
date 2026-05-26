@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useLedgersStore } from '../src/stores/ledgers'
+import { useLedgersStore } from '../../src/stores/ledgers'
 
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)

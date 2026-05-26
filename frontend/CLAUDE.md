@@ -16,6 +16,27 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 ## Usage Patterns
 
+### Views structure
+
+`src/views/` is organized by domain subdirectory, mirroring backend Django apps as closely as possible:
+
+- `auth/` ↔ `accounts` app — login, signup
+- `ledgers/` ↔ `ledgers` app — ledger list, detail, members
+
+When a new backend app ships, create a matching subdirectory under `src/views/`. The `auth` exception (vs `accounts`) is intentional: the frontend only exposes authentication flows, not account management.
+
+### Test structure
+
+`tests/` mirrors `src/` directly — same subdirectory structure:
+
+- `tests/views/auth/`, `tests/views/ledgers/` — view tests, mirroring `src/views/`
+- `tests/stores/` — store tests, mirroring `src/stores/`
+- `tests/lib/` — lib tests, mirroring `src/lib/`
+- `tests/router/` — router tests, mirroring `src/router/`
+- `tests/App.test.ts` — mirrors `src/App.vue`
+
+When a new `src/<dir>/` is added, create a matching `tests/<dir>/`.
+
 ### View template structure
 
 Body has two direct children: `<header>` (rendered by `App.vue`) and `<main>` (rendered by each view). Never add wrapper `<div>`s.

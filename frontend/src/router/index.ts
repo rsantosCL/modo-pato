@@ -4,11 +4,11 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
-    { path: '/signup', component: () => import('@/views/SignupView.vue'), meta: { public: true } },
-    { path: '/ledgers', component: () => import('@/views/LedgersView.vue') },
-    { path: '/ledgers/:id', component: () => import('@/views/LedgerDetailView.vue') },
-    { path: '/ledgers/:id/members', component: () => import('@/views/LedgerMembersView.vue') },
+    { path: '/login', component: () => import('@/views/auth/LoginView.vue'), meta: { public: true } },
+    { path: '/signup', component: () => import('@/views/auth/SignupView.vue'), meta: { public: true } },
+    { path: '/ledgers', component: () => import('@/views/ledgers/LedgersView.vue') },
+    { path: '/ledgers/:id', component: () => import('@/views/ledgers/LedgerDetailView.vue') },
+    { path: '/ledgers/:id/members', component: () => import('@/views/ledgers/LedgerMembersView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/ledgers' },
   ],
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { api, ApiError } from '../src/lib/api'
+import { api, ApiError } from '../../src/lib/api'
 
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)

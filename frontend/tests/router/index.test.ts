@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
-import { useAuthStore } from '../src/stores/auth'
+import { useAuthStore } from '../../src/stores/auth'
 
 function makeRouter() {
-  const { default: router } = require('../src/router/index')
+  const { default: router } = require('../../src/router/index')
   return router
 }
 
