@@ -25,6 +25,10 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 `tests/` mirrors `src/` one-to-one. New `src/<dir>/` → new `tests/<dir>/`.
 
+### Breadcrumbs
+
+Routes declare their own breadcrumb trail via `meta.breadcrumbs: BreadcrumbFn` (typed in `src/router/index.ts`). `App.vue` evaluates it generically — never add route-specific breadcrumb logic there. Each function receives `(route, t)` and may call any `use*Store()` directly. Omit `meta.breadcrumbs` on routes that need no breadcrumb (e.g. `/ledgers`, auth pages).
+
 ### View template structure
 
 Body has two direct children: `<header>` (rendered by `App.vue`) and `<main>` (rendered by each view). Never add wrapper `<div>`s.
