@@ -31,7 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     return await doRequest<T>(path, options)
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) {
+    if (e instanceof ApiError && e.status === 401 && path !== 'v1/auth/refresh/') {
       try {
         const { useAuthStore } = await import('@/stores/auth')
         const auth = useAuthStore()
