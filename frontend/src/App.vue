@@ -14,14 +14,16 @@ function logout() {
 </script>
 
 <template>
-  <nav>
-    <ul>
-      <li><strong>Modo Pato</strong></li>
-    </ul>
-    <ul v-if="auth.isAuthenticated">
-      <li><router-link to="/ledgers">{{ t('ledger.title') }}</router-link></li>
-      <li><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
-    </ul>
-  </nav>
+  <header>
+    <nav>
+      <ul>
+        <li><strong>Modo Pato</strong></li>
+      </ul>
+      <ul v-if="auth.isAuthenticated">
+        <li><router-link to="/ledgers">{{ t('ledger.title') }}</router-link></li>
+        <li><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
+      </ul>
+    </nav>
+  </header>
   <router-view />
 </template>

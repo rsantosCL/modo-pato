@@ -13,11 +13,13 @@ onMounted(() => store.fetchOne(route.params.id as string))
 
 <template>
   <main>
-    <p v-if="!store.activeLedger">{{ t('common.loading') }}</p>
-    <template v-else>
-      <h2>{{ store.activeLedger.name }}</h2>
-      <p>{{ t(`ledger.kind_${store.activeLedger.kind}`) }}</p>
-      <router-link :to="`/ledgers/${store.activeLedger.id}/members`">{{ t('ledger.members') }}</router-link>
-    </template>
+    <section>
+      <p v-if="!store.activeLedger">{{ t('common.loading') }}</p>
+      <template v-else>
+        <h2>{{ store.activeLedger.name }}</h2>
+        <p>{{ t(`ledger.kind_${store.activeLedger.kind}`) }}</p>
+        <router-link :to="`/ledgers/${store.activeLedger.id}/members`">{{ t('ledger.members') }}</router-link>
+      </template>
+    </section>
   </main>
 </template>

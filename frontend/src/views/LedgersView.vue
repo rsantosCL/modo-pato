@@ -27,38 +27,42 @@ async function create() {
 
 <template>
   <main>
-    <header>
+    <section>
       <h2>{{ t('ledger.title') }}</h2>
       <button @click="showForm = !showForm">{{ t('ledger.create') }}</button>
-    </header>
+      <article v-if="showForm">
+        <form @submit.prevent="create">
+          <fieldset class="grid">
+            <label>
+              {{ t('ledger.name') }}
+              <input v-model="name" type="text" required />
+            </label>
+            <label>
+              {{ t('ledger.kind') }}
+              <select v-model="kind">
+                <option value="personal">{{ t('ledger.kind_personal') }}</option>
+                <option value="shared">{{ t('ledger.kind_shared') }}</option>
+              </select>
+            </label>
+          </fieldset>
+          <p v-if="error" aria-live="polite">{{ error }}</p>
+          <input type="submit" :value="t('common.save')" />
+          <input type="reset" :value="t('common.cancel')" @click="showForm = false" />
+        </form>
+      </article>
+    </section>
 
-    <article v-if="showForm">
-      <form @submit.prevent="create">
-        <label>
-          {{ t('ledger.name') }}
-          <input v-model="name" type="text" required />
-        </label>
-        <label>
-          {{ t('ledger.kind') }}
-          <select v-model="kind">
-            <option value="personal">{{ t('ledger.kind_personal') }}</option>
-            <option value="shared">{{ t('ledger.kind_shared') }}</option>
-          </select>
-        </label>
-        <p v-if="error" aria-live="polite">{{ error }}</p>
-        <button type="submit">{{ t('common.save') }}</button>
-        <button type="button" @click="showForm = false">{{ t('common.cancel') }}</button>
-      </form>
-    </article>
-
-    <p v-if="!store.ledgers.length">{{ t('ledger.noLedgers') }}</p>
-
-    <ul v-else>
-      <li v-for="ledger in store.ledgers" :key="ledger.id">
-        <router-link :to="`/ledgers/${ledger.id}`">{{ ledger.name }}</router-link>
-        <small> — {{ t(`ledger.kind_${ledger.kind}`) }}</small>
-        <router-link :to="`/ledgers/${ledger.id}/members`">{{ t('ledger.members') }}</router-link>
-      </li>
-    </ul>
+    <section>
+      <p v-if="!store.ledgers.length">{{ t('ledger.noLedgers') }}</p>
+      <ul v-else>
+        <li v-for="ledger in store.ledgers" :key="ledger.id">
+          <router-link :to="`/ledgers/${ledger.id}`">{{ ledger.name }}</router-link>
+          <small>
+            — {{ t(`ledger.kind_${ledger.kind}`) }}
+            (<router-link :to="`/ledgers/${ledger.id}/members`">{{ t('ledger.members') }}</router-link>)
+          </small>
+        </li>
+      </ul>
+    </section>
   </main>
 </template>

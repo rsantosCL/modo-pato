@@ -32,38 +32,41 @@ async function invite() {
 
 <template>
   <main>
-    <h2>{{ t('ledger.members') }}</h2>
-
-    <table v-if="members.length">
-      <thead>
-        <tr>
-          <th>{{ t('auth.displayName') }}</th>
-          <th>{{ t('auth.email') }}</th>
-          <th>{{ t('ledger.role') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="m in members" :key="m.user_id">
-          <td>{{ m.display_name }}</td>
-          <td>{{ m.email }}</td>
-          <td>{{ t(`ledger.role_${m.role}`) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <section>
+      <h2>{{ t('ledger.members') }}</h2>
+      <table v-if="members.length">
+        <thead>
+          <tr>
+            <th>{{ t('auth.displayName') }}</th>
+            <th>{{ t('auth.email') }}</th>
+            <th>{{ t('ledger.role') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="m in members" :key="m.user_id">
+            <td>{{ m.display_name }}</td>
+            <td>{{ m.email }}</td>
+            <td>{{ t(`ledger.role_${m.role}`) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
     <section>
       <h3>{{ t('ledger.invite') }}</h3>
-      <form @submit.prevent="invite">
-        <label>
-          {{ t('ledger.role') }}
-          <select v-model="inviteRole">
-            <option value="editor">{{ t('ledger.role_editor') }}</option>
-            <option value="viewer">{{ t('ledger.role_viewer') }}</option>
-          </select>
-        </label>
-        <p v-if="error" aria-live="polite">{{ error }}</p>
-        <button type="submit">{{ t('ledger.invite') }}</button>
-      </form>
+      <article>
+        <form @submit.prevent="invite">
+          <label>
+            {{ t('ledger.role') }}
+            <select v-model="inviteRole">
+              <option value="editor">{{ t('ledger.role_editor') }}</option>
+              <option value="viewer">{{ t('ledger.role_viewer') }}</option>
+            </select>
+          </label>
+          <p v-if="error" aria-live="polite">{{ error }}</p>
+          <input type="submit" :value="t('ledger.invite')" />
+        </form>
+      </article>
       <p v-if="inviteToken">
         {{ t('ledger.inviteToken') }}: <code>{{ inviteToken }}</code>
       </p>

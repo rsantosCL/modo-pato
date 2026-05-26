@@ -42,7 +42,7 @@ async function submit() {
           <input v-model="password" type="password" required autocomplete="new-password" minlength="8" />
         </label>
         <p v-if="error" aria-live="polite">{{ error }}</p>
-        <button type="submit">{{ t('auth.signup') }}</button>
+        <input type="submit" :value="t('auth.signup')" />
       </form>
       <p>{{ t('auth.alreadyAccount') }} <router-link to="/login">{{ t('auth.login') }}</router-link></p>
     </article>
