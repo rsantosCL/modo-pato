@@ -23,6 +23,15 @@
     "role_editor": "Editor",
     "role_viewer": "Viewer",
     "inviteToken": "Share this token with your partner",
+    "inviteLink": "Invite link",
+    "copyLink": "Copy link",
+    "linkCopied": "Copied!",
+    "edit": "Edit",
+    "editTitle": "Edit ledger",
+    "acceptInvite": "Accept invite",
+    "inviteJoinAs": "You've been invited to join {name} as {role}.",
+    "invitedBy": "Invited by {name}.",
+    "invalidInvite": "This invite link is invalid or has already been used.",
     "noLedgers": "No ledgers yet. Create one to get started."
   },
   "catalog": {

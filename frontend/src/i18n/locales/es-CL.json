@@ -23,6 +23,15 @@
     "role_editor": "Editor",
     "role_viewer": "Observador",
     "inviteToken": "Comparte este código con tu pareja",
+    "inviteLink": "Enlace de invitación",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "¡Copiado!",
+    "edit": "Editar",
+    "editTitle": "Editar presupuesto",
+    "acceptInvite": "Aceptar invitación",
+    "inviteJoinAs": "Has sido invitado a unirte a {name} como {role}.",
+    "invitedBy": "Invitado por {name}.",
+    "invalidInvite": "Este enlace de invitación es inválido o ya fue usado.",
     "noLedgers": "Sin presupuestos aún. Crea uno para comenzar."
   },
   "catalog": {
