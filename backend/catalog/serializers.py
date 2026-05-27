@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from rest_framework import serializers
 
 from .derived import DerivedFields
+from .enums import ItemCategory, PaymentSource
 from .models import CatalogItem, CatalogItemRevision
 
 
@@ -112,6 +113,10 @@ class CatalogItemCreateSerializer(CatalogItemSerializer):
         if start_month and rev_month and rev_month > start_month:
             raise serializers.ValidationError(
                 {"first_revision": {"effective_from_month": "Must be <= start_month."}}
+            )
+        if data.get("category") == ItemCategory.INCOME and first_revision.get("payment_source") != PaymentSource.CASH:
+            raise serializers.ValidationError(
+                {"first_revision": {"payment_source": "Income items must use Cash."}}
             )
         return data
 

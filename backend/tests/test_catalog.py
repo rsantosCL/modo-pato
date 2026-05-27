@@ -406,6 +406,56 @@ def test_first_revision_must_cover_start_month(auth_client, alice, alice_ledger)
     assert response.status_code == 400
 
 
+# ── Income → CASH enforcement ────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_income_item_with_credit_card_rejected(auth_client, alice, alice_ledger):
+    c = auth_client(alice)
+    payload = _item_payload(category="income")
+    payload["first_revision"]["payment_source"] = "CREDIT_CARD"
+    response = c.post(f"/v1/ledgers/{alice_ledger.id}/catalog-items/", payload, content_type="application/json")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_income_item_with_cash_accepted(auth_client, alice, alice_ledger):
+    c = auth_client(alice)
+    response = c.post(
+        f"/v1/ledgers/{alice_ledger.id}/catalog-items/",
+        _item_payload(category="income"),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+
+
+@pytest.mark.django_db
+def test_income_revision_with_credit_card_rejected(auth_client, alice, alice_ledger):
+    item = CatalogItem.objects.create(
+        ledger=alice_ledger, category=ItemCategory.INCOME, name="Salary",
+        currency=CurrencyType.CLP, frequency=ItemFrequency.MONTHLY, start_month=date(2025, 1, 1),
+    )
+    CatalogItemRevision.objects.create(
+        catalog_item=item, effective_from_month=date(2025, 1, 1),
+        amount_real="7000000.0000", payment_source=PaymentSource.CASH, created_by=alice,
+    )
+    c = auth_client(alice)
+    response = c.post(
+        f"/v1/catalog-items/{item.id}/revisions/",
+        {"effective_from_month": "2026-01-01", "amount_real": "8000000.0000", "payment_source": "CREDIT_CARD"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_non_income_item_allows_credit_card(auth_client, alice, alice_ledger):
+    c = auth_client(alice)
+    payload = _item_payload(category="variable")
+    payload["first_revision"]["payment_source"] = "CREDIT_CARD"
+    response = c.post(f"/v1/ledgers/{alice_ledger.id}/catalog-items/", payload, content_type="application/json")
+    assert response.status_code == 201
+
+
 # ── Derived fields in API response (Appendix B) ───────────────────────────────
 
 @pytest.mark.django_db

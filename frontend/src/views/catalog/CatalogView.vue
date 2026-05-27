@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/lib/api'
@@ -87,6 +87,10 @@ const createRevisionForm = ref<RevisionForm>({
   note: '',
 })
 
+watch(() => createForm.value.category, (cat) => {
+  if (cat === 'income') createRevisionForm.value.payment_source = 'CASH'
+})
+
 function openCreateDialog() {
   createForm.value = {
     name: '', category: 'variable', currency: 'CLP', frequency: 'M',
@@ -111,6 +115,8 @@ async function submitCreate() {
   const revErrors = validateRevision(
     { ...createRevisionForm.value, effective_from_month: createForm.value.start_month },
     createForm.value.start_month,
+    createForm.value.category,
+    true,
   )
   createErrors.value = { ...itemErrors, ...Object.fromEntries(Object.entries(revErrors).map(([k, v]) => [`revision_${k}`, v])) }
   if (hasErrors(createErrors.value)) return
@@ -156,7 +162,7 @@ function openRevisionsDialog(item: CatalogItem) {
 
 async function submitRevision() {
   if (!activeItem.value) return
-  revisionErrors.value = validateRevision(revisionForm.value, fromApiMonth(activeItem.value.start_month))
+  revisionErrors.value = validateRevision(revisionForm.value, fromApiMonth(activeItem.value.start_month), activeItem.value.category)
   if (hasErrors(revisionErrors.value)) return
 
   revisionSubmitting.value = true
@@ -314,7 +320,7 @@ onMounted(async () => {
             <input v-model="createRevisionForm.amount_real" type="number" step="any" required />
             <small v-if="createErrors.revision_amount_real" aria-invalid="true">{{ createErrors.revision_amount_real }}</small>
           </label>
-          <label>
+          <label v-if="createForm.category !== 'income'">
             {{ t('catalog.col.source') }}
             <select v-model="createRevisionForm.payment_source">
               <option value="CASH">{{ t('catalog.source_CASH') }}</option>
@@ -381,7 +387,7 @@ onMounted(async () => {
             </label>
           </fieldset>
           <fieldset class="grid">
-            <label>
+            <label v-if="activeItem?.category !== 'income'">
               {{ t('catalog.col.source') }}
               <select v-model="revisionForm.payment_source">
                 <option value="CASH">{{ t('catalog.source_CASH') }}</option>

@@ -137,12 +137,17 @@ export function validateCatalogItem(form: CatalogItemForm): ValidationErrors {
   return errors
 }
 
-export function validateRevision(form: RevisionForm, startMonth: string): ValidationErrors {
+export function validateRevision(
+  form: RevisionForm,
+  startMonth: string,
+  category: ItemCategory,
+  isFirstRevision = false,
+): ValidationErrors {
   const errors: ValidationErrors = {}
 
   if (!isValidYM(form.effective_from_month)) {
     errors.effective_from_month = 'Required. Use YYYY-MM format.'
-  } else if (isValidYM(startMonth)) {
+  } else if (isFirstRevision && isValidYM(startMonth)) {
     const revInt = ymToInt(...Object.values(parseYM(form.effective_from_month)) as [number, number])
     const startInt = ymToInt(...Object.values(parseYM(startMonth)) as [number, number])
     if (revInt > startInt) {
@@ -153,6 +158,10 @@ export function validateRevision(form: RevisionForm, startMonth: string): Valida
   const amount = parseFloat(form.amount_real)
   if (!form.amount_real || isNaN(amount)) {
     errors.amount_real = 'Required.'
+  }
+
+  if (category === 'income' && form.payment_source !== 'CASH') {
+    errors.payment_source = 'Income items must use Cash.'
   }
 
   return errors

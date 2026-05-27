@@ -64,9 +64,12 @@ class CatalogItemRevisionListCreateView(generics.ListCreateAPIView):
         ).order_by("effective_from_month")
 
     def perform_create(self, serializer):
+        from .enums import ItemCategory, PaymentSource
         item = self._get_item()
         if not item.ledger.can_edit(self.request.user):
             raise PermissionDenied
+        if item.category == ItemCategory.INCOME and serializer.validated_data.get("payment_source") != PaymentSource.CASH:
+            raise ValidationError({"payment_source": "Income items must use Cash."})
         try:
             serializer.save(catalog_item=item, created_by=self.request.user)
         except IntegrityError:
