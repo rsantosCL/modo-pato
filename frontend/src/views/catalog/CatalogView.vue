@@ -108,19 +108,23 @@ function fromApiMonth(ymd: string): string {
 
 async function submitCreate() {
   const itemErrors = validateCatalogItem(createForm.value)
-  const revErrors = validateRevision(createRevisionForm.value, createForm.value.start_month)
+  const revErrors = validateRevision(
+    { ...createRevisionForm.value, effective_from_month: createForm.value.start_month },
+    createForm.value.start_month,
+  )
   createErrors.value = { ...itemErrors, ...Object.fromEntries(Object.entries(revErrors).map(([k, v]) => [`revision_${k}`, v])) }
   if (hasErrors(createErrors.value)) return
 
   createSubmitting.value = true
   try {
+    const apiStartMonth = toApiMonth(createForm.value.start_month)
     const payload = {
       ...createForm.value,
-      start_month: toApiMonth(createForm.value.start_month),
+      start_month: apiStartMonth,
       payoff_month: createForm.value.payoff_month ? toApiMonth(createForm.value.payoff_month) : null,
       first_revision: {
         ...createRevisionForm.value,
-        effective_from_month: toApiMonth(createRevisionForm.value.effective_from_month),
+        effective_from_month: apiStartMonth,
       },
     }
     const created = await api.post<CatalogItem>(`v1/ledgers/${ledgerId}/catalog-items/`, payload)
@@ -304,14 +308,6 @@ onMounted(async () => {
           </label>
         </fieldset>
 
-        <label v-if="createForm.category === 'provision'">
-          <input v-model="createForm.is_saving" type="checkbox" role="switch" />
-          {{ t('catalog.isSaving') }}
-        </label>
-
-        <hr />
-        <p><strong>{{ t('catalog.firstRevision') }}</strong></p>
-
         <fieldset class="grid">
           <label>
             {{ t('catalog.col.amount') }}
@@ -327,10 +323,9 @@ onMounted(async () => {
           </label>
         </fieldset>
 
-        <label>
-          {{ t('catalog.effectiveFrom') }}
-          <input v-model="createRevisionForm.effective_from_month" type="month" required />
-          <small v-if="createErrors.revision_effective_from_month" aria-invalid="true">{{ createErrors.revision_effective_from_month }}</small>
+        <label v-if="createForm.category === 'provision'">
+          <input v-model="createForm.is_saving" type="checkbox" role="switch" />
+          {{ t('catalog.isSaving') }}
         </label>
 
         <p v-if="createErrors.form" aria-live="polite">{{ createErrors.form }}</p>
