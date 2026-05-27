@@ -151,6 +151,19 @@ describe('validateCatalogItem — frequency / custom_months', () => {
   })
 })
 
+describe('validateCatalogItem — income has no payoff_month', () => {
+  it('rejects payoff_month on income items', () => {
+    expect(validateCatalogItem(baseItem({ category: 'income', payoff_month: '2025-06' })).payoff_month).toBeTruthy()
+  })
+
+  it('accepts payoff_month on non-income items', () => {
+    const errors = validateCatalogItem(baseItem({
+      category: 'essential', frequency: 'M', start_month: '2025-01', payoff_month: '2025-06',
+    }))
+    expect(errors.payoff_month).toBeUndefined()
+  })
+})
+
 describe('validateCatalogItem — payoff_month', () => {
   it('invalid format is an error', () => {
     expect(validateCatalogItem(baseItem({ payoff_month: '2025-01-01' })).payoff_month).toBeTruthy()

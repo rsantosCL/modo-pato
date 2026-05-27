@@ -131,6 +131,159 @@ describe('CatalogView', () => {
     expect(sourceSelect).toBeUndefined()
   })
 
+  // ── Table row display ───────────────────────────────────────────────────────
+
+  it('renders finite installments and end_month instead of ∞', async () => {
+    const finite = { ...COMBUSTIBLE, total_installments: 12, end_month: '2025-12-01' }
+    mockResponse([finite])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('12')
+    expect(wrapper.text()).toContain('2025-12')
+  })
+
+  it('shows — for amount and source when item has no active revision before today', async () => {
+    const noRevision = { ...COMBUSTIBLE, revisions: [] }
+    mockResponse([noRevision])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('—')
+  })
+
+  // ── Create item errors ───────────────────────────────────────────────────────
+
+  it('shows API error message when create fails', async () => {
+    mockResponse([])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('button').trigger('click')
+    await wrapper.find('input[type="text"]').setValue('Combustible')
+    await wrapper.find('input[type="month"]').setValue('2025-01')
+    await wrapper.find('input[step="any"]').setValue('100000')
+
+    mockResponse({ detail: 'error' }, 400)
+    await wrapper.find('#create-item-form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('[aria-live]').text()).toBeTruthy()
+  })
+
+  it('shows is_saving checkbox when provision category is selected in create dialog', async () => {
+    mockResponse([])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    const categorySelect = wrapper.findAll('select').find(s =>
+      s.findAll('option').some(o => o.element.value === 'provision')
+    )
+    await categorySelect!.setValue('provision')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(true)
+  })
+
+  // ── Edit item ───────────────────────────────────────────────────────────────
+
+  it('opens edit dialog pre-filled with item data', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+    expect((wrapper.find('#edit-item-form input[type="text"]').element as HTMLInputElement).value).toBe('Combustible')
+  })
+
+  it('submits edit form, calls PATCH, and updates item in list', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    await wrapper.find('input[type="text"]').setValue('Gasolina')
+
+    const updated = { ...COMBUSTIBLE, name: 'Gasolina' }
+    mockResponse(updated)
+    await wrapper.find('#edit-item-form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Gasolina')
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled()
+  })
+
+  it('excludes income option from category select when editing non-income item', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const categorySelect = wrapper.find('#edit-item-form select')
+    const options = categorySelect.findAll('option').map(o => o.element.value)
+    expect(options).not.toContain('income')
+  })
+
+  it('disables category select in edit dialog for income items', async () => {
+    const income = { ...COMBUSTIBLE, category: 'income' as const }
+    mockResponse([income])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const categorySelect = wrapper.find('#edit-item-form select')
+    expect((categorySelect.element as HTMLSelectElement).disabled).toBe(true)
+  })
+
+  it('shows validation error and keeps dialog open when submitting empty edit form', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    await wrapper.find('#edit-item-form input[type="month"]').setValue('')
+    await wrapper.find('#edit-item-form').trigger('submit')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[aria-invalid="true"]').exists()).toBe(true)
+    expect(HTMLDialogElement.prototype.close).not.toHaveBeenCalled()
+  })
+
+  it('shows API error message when edit PATCH fails', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    mockResponse({ detail: 'error' }, 400)
+    await wrapper.find('#edit-item-form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('[aria-live]').text()).toBeTruthy()
+  })
+
+  it('shows is_saving checkbox in edit dialog when category is provision', async () => {
+    const provision = { ...COMBUSTIBLE, category: 'provision' as const }
+    mockResponse([provision])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
+    await editBtn!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('#edit-item-form input[type="checkbox"]').exists()).toBe(true)
+  })
+
   // ── Revisions dialog ────────────────────────────────────────────────────────
 
   it('opens revisions dialog showing the item revision history', async () => {

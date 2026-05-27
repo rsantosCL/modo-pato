@@ -28,6 +28,7 @@
   "catalog": {
     "title": "Catalog",
     "newItem": "New item",
+    "editItem": "Edit",
     "noItems": "No items in this category.",
     "revisions": "Revisions",
     "addRevision": "Add revision",
@@ -56,6 +57,7 @@
       "startMonth": "Start month",
       "installments": "Installments",
       "endMonth": "End month",
+      "payoffMonth": "Payoff month",
       "category": "Category",
       "note": "Note"
     }

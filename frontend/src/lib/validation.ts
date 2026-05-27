@@ -107,10 +107,14 @@ export function validateCatalogItem(form: CatalogItemForm): ValidationErrors {
     errors.custom_months = 'Only allowed for custom frequency.'
   }
 
+  if (form.category === 'income' && form.payoff_month) {
+    errors.payoff_month = 'Income items cannot have a payoff month.'
+  }
+
   if (form.payoff_month !== null && form.payoff_month !== undefined && form.payoff_month !== '') {
     if (!isValidYM(form.payoff_month)) {
       errors.payoff_month = 'Use YYYY-MM format.'
-    } else if (isValidYM(form.start_month)) {
+    } else if (form.category !== 'income' && isValidYM(form.start_month)) {
       const startInt = ymToInt(...Object.values(parseYM(form.start_month)) as [number, number])
       const payoffInt = ymToInt(...Object.values(parseYM(form.payoff_month)) as [number, number])
 

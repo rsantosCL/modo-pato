@@ -28,6 +28,7 @@
   "catalog": {
     "title": "Catálogo",
     "newItem": "Nuevo ítem",
+    "editItem": "Editar",
     "noItems": "No hay ítems en esta categoría.",
     "revisions": "Revisiones",
     "addRevision": "Agregar revisión",
@@ -56,6 +57,7 @@
       "startMonth": "Mes inicial",
       "installments": "Cuotas",
       "endMonth": "Mes final",
+      "payoffMonth": "Mes de pago anticipado",
       "category": "Categoría",
       "note": "Nota"
     }

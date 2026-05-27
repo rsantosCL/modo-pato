@@ -82,6 +82,20 @@ class CatalogItemSerializer(serializers.ModelSerializer):
         if total_installments is not None and total_installments < 1:
             raise serializers.ValidationError({"total_installments": "Must be >= 1 or null."})
 
+        # income category is immutable in both directions
+        if self.instance is not None:
+            new_category = data.get("category")
+            if new_category is not None and new_category != self.instance.category:
+                if self.instance.category == ItemCategory.INCOME:
+                    raise serializers.ValidationError({"category": "Income items cannot change category."})
+                if new_category == ItemCategory.INCOME:
+                    raise serializers.ValidationError({"category": "Cannot change category to income."})
+
+        # income items cannot have a payoff month
+        category = data.get("category", getattr(self.instance, "category", None))
+        if category == ItemCategory.INCOME and payoff_month is not None:
+            raise serializers.ValidationError({"payoff_month": "Income items cannot have a payoff month."})
+
         # payoff_month cross-field checks
         if payoff_month is not None and start_month is not None:
             if payoff_month < start_month:

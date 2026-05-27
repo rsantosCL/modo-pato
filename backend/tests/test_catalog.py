@@ -448,6 +448,64 @@ def test_income_revision_with_credit_card_rejected(auth_client, alice, alice_led
 
 
 @pytest.mark.django_db
+def test_income_item_cannot_change_category(auth_client, alice, salary_item):
+    c = auth_client(alice)
+    response = c.patch(
+        f"/v1/catalog-items/{salary_item.id}/",
+        {"category": "variable"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_non_income_item_cannot_change_category_to_income(auth_client, alice, alice_ledger):
+    item = CatalogItem.objects.create(
+        ledger=alice_ledger, category=ItemCategory.VARIABLE, name="Combustible",
+        currency=CurrencyType.CLP, frequency=ItemFrequency.MONTHLY, start_month=date(2025, 1, 1),
+    )
+    CatalogItemRevision.objects.create(
+        catalog_item=item, effective_from_month=date(2025, 1, 1),
+        amount_real="100000.0000", payment_source=PaymentSource.CASH, created_by=alice,
+    )
+    c = auth_client(alice)
+    response = c.patch(
+        f"/v1/catalog-items/{item.id}/",
+        {"category": "income"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_income_item_can_be_patched_keeping_income_category(auth_client, alice, salary_item):
+    c = auth_client(alice)
+    response = c.patch(
+        f"/v1/catalog-items/{salary_item.id}/",
+        {"name": "Base Salary", "category": "income"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_income_item_with_payoff_month_rejected(auth_client, alice, alice_ledger):
+    c = auth_client(alice)
+    payload = _item_payload(category="income", payoff_month="2025-06-01")
+    payload["first_revision"]["effective_from_month"] = "2025-01-01"
+    response = c.post(f"/v1/ledgers/{alice_ledger.id}/catalog-items/", payload, content_type="application/json")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_non_income_item_allows_payoff_month(auth_client, alice, alice_ledger):
+    c = auth_client(alice)
+    payload = _item_payload(category="variable", frequency="M", start_month="2025-01-01", payoff_month="2025-06-01")
+    response = c.post(f"/v1/ledgers/{alice_ledger.id}/catalog-items/", payload, content_type="application/json")
+    assert response.status_code == 201
+
+
+@pytest.mark.django_db
 def test_non_income_item_allows_credit_card(auth_client, alice, alice_ledger):
     c = auth_client(alice)
     payload = _item_payload(category="variable")

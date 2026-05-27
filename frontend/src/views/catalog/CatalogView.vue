@@ -143,6 +143,66 @@ async function submitCreate() {
   }
 }
 
+// ── Edit item dialog ──────────────────────────────────────────────────────────
+
+const editCategories = computed(() =>
+  editingItem.value?.category === 'income' ? CATEGORIES : CATEGORIES.filter(c => c !== 'income')
+)
+
+const editDialog = ref<HTMLDialogElement | null>(null)
+const editingItem = ref<CatalogItem | null>(null)
+const editForm = ref<CatalogItemForm>({
+  name: '', category: 'variable', currency: 'CLP', frequency: 'M',
+  custom_months: null, start_month: '', total_installments: null,
+  payoff_month: null, is_saving: false,
+})
+const editErrors = ref<Record<string, string>>({})
+const editSubmitting = ref(false)
+
+function openEditDialog(item: CatalogItem) {
+  editingItem.value = item
+  editForm.value = {
+    name: item.name,
+    category: item.category,
+    currency: item.currency,
+    frequency: item.frequency,
+    custom_months: item.custom_months,
+    start_month: fromApiMonth(item.start_month),
+    total_installments: item.total_installments,
+    payoff_month: item.payoff_month ? fromApiMonth(item.payoff_month) : null,
+    is_saving: item.is_saving,
+  }
+  editErrors.value = {}
+  editDialog.value?.showModal()
+}
+
+async function submitEdit() {
+  editErrors.value = validateCatalogItem(editForm.value)
+  if (hasErrors(editErrors.value)) return
+
+  editSubmitting.value = true
+  try {
+    const payload = {
+      name: editForm.value.name,
+      category: editForm.value.category,
+      frequency: editForm.value.frequency,
+      custom_months: editForm.value.custom_months,
+      start_month: toApiMonth(editForm.value.start_month),
+      total_installments: editForm.value.total_installments,
+      payoff_month: editForm.value.payoff_month ? toApiMonth(editForm.value.payoff_month) : null,
+      is_saving: editForm.value.is_saving,
+    }
+    const updated = await api.patch<CatalogItem>(`v1/catalog-items/${editingItem.value!.id}/`, payload)
+    const idx = items.value.findIndex(i => i.id === updated.id)
+    if (idx !== -1) items.value[idx] = updated
+    editDialog.value?.close()
+  } catch {
+    editErrors.value.form = t('common.error')
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
 // ── Revisions dialog ──────────────────────────────────────────────────────────
 
 const revisionsDialog = ref<HTMLDialogElement | null>(null)
@@ -245,9 +305,8 @@ onMounted(async () => {
                   <td>{{ item.total_installments ?? '∞' }}</td>
                   <td>{{ item.end_month ? item.end_month.slice(0, 7) : '∞' }}</td>
                   <td>
-                    <button class="secondary" @click="openRevisionsDialog(item)">
-                      {{ t('catalog.revisions') }}
-                    </button>
+                    <button class="secondary" @click="openEditDialog(item)">{{ t('catalog.editItem') }}</button>
+                    <button class="secondary" @click="openRevisionsDialog(item)">{{ t('catalog.revisions') }}</button>
                   </td>
                 </tr>
               </tbody>
@@ -340,6 +399,74 @@ onMounted(async () => {
       <footer>
         <button type="button" class="secondary" @click="createDialog?.close()">{{ t('common.cancel') }}</button>
         <button type="submit" form="create-item-form" :aria-busy="createSubmitting">{{ t('common.save') }}</button>
+      </footer>
+    </article>
+  </dialog>
+
+  <!-- Edit item dialog -->
+  <dialog ref="editDialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" @click="editDialog?.close()"></button>
+        <h3>{{ t('catalog.editItem') }}</h3>
+      </header>
+
+      <form id="edit-item-form" @submit.prevent="submitEdit">
+        <fieldset class="grid">
+          <label>
+            {{ t('catalog.col.name') }}
+            <input v-model="editForm.name" type="text" required autofocus />
+          </label>
+          <label>
+            {{ t('catalog.col.category') }}
+            <select v-model="editForm.category" :disabled="editingItem?.category === 'income'">
+              <option v-for="cat in editCategories" :key="cat" :value="cat">{{ t(`catalog.category_${cat}`) }}</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset class="grid">
+          <label>
+            {{ t('catalog.col.frequency') }}
+            <select v-model="editForm.frequency">
+              <option value="M">{{ t('catalog.frequency_M') }}</option>
+              <option value="Q">{{ t('catalog.frequency_Q') }}</option>
+              <option value="H">{{ t('catalog.frequency_H') }}</option>
+              <option value="Y">{{ t('catalog.frequency_Y') }}</option>
+              <option value="CUSTOM">{{ t('catalog.frequency_CUSTOM') }}</option>
+            </select>
+          </label>
+          <label>
+            {{ t('catalog.col.startMonth') }}
+            <input v-model="editForm.start_month" type="month" required />
+            <small v-if="editErrors.start_month" aria-invalid="true">{{ editErrors.start_month }}</small>
+          </label>
+        </fieldset>
+
+        <fieldset class="grid">
+          <label>
+            {{ t('catalog.col.installments') }}
+            <input v-model.number="editForm.total_installments" type="number" min="1" :placeholder="t('catalog.infinite')" />
+            <small v-if="editErrors.total_installments" aria-invalid="true">{{ editErrors.total_installments }}</small>
+          </label>
+          <label v-if="editForm.category !== 'income'">
+            {{ t('catalog.col.payoffMonth') }}
+            <input v-model="editForm.payoff_month" type="month" />
+            <small v-if="editErrors.payoff_month" aria-invalid="true">{{ editErrors.payoff_month }}</small>
+          </label>
+        </fieldset>
+
+        <label v-if="editForm.category === 'provision'">
+          <input v-model="editForm.is_saving" type="checkbox" role="switch" />
+          {{ t('catalog.isSaving') }}
+        </label>
+
+        <p v-if="editErrors.form" aria-live="polite">{{ editErrors.form }}</p>
+      </form>
+
+      <footer>
+        <button type="button" class="secondary" @click="editDialog?.close()">{{ t('common.cancel') }}</button>
+        <button type="submit" form="edit-item-form" :aria-busy="editSubmitting">{{ t('common.save') }}</button>
       </footer>
     </article>
   </dialog>
