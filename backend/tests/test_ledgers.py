@@ -130,6 +130,13 @@ def test_accept_invalid_token(auth_client, bob):
 
 
 @pytest.mark.django_db
+def test_list_members_as_non_member_forbidden(auth_client, bob, alice_ledger):
+    c = auth_client(bob)
+    response = c.get(f"/v1/ledgers/{alice_ledger.id}/members/")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_viewer_cannot_create_invite(auth_client, bob, alice_ledger):
     LedgerMember.objects.create(ledger=alice_ledger, user=bob, role=MemberRole.VIEWER, joined_at=timezone.now())
     c = auth_client(bob)

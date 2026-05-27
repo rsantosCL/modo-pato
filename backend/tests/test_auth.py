@@ -54,6 +54,12 @@ def test_login_wrong_password(client, existing_user):
 
 
 @pytest.mark.django_db
+def test_signup_without_email_fails(db):
+    with pytest.raises(ValueError, match="Email is required"):
+        User.objects.create_user(email="", password="pass")
+
+
+@pytest.mark.django_db
 def test_refresh(client, user_data, existing_user):
     login = client.post(
         "/v1/auth/login/",
