@@ -47,6 +47,17 @@ const router = createRouter({
         ],
       },
     },
+    {
+      path: '/ledgers/:id/catalog',
+      component: () => import('@/views/catalog/CatalogView.vue'),
+      meta: {
+        breadcrumbs: (route, t) => [
+          { label: t('ledger.title'), to: '/ledgers' },
+          { label: useLedgersStore().activeLedger?.name ?? '…', to: `/ledgers/${route.params.id}` },
+          { label: t('catalog.title') },
+        ],
+      },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/ledgers' },
   ],
 })
