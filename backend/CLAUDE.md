@@ -2,7 +2,7 @@
 
 ## Purpose & Scope
 
-Django 6 + DRF API server. v0.2.0: `core`, `accounts`, `ledgers` apps shipped. Catalog, currency, month logic not yet implemented.
+Django 6 + DRF API server. v0.3.0: `core`, `accounts`, `ledgers`, `catalog` apps shipped. Currency, month logic not yet implemented.
 
 Handles: all domain logic, catalog query derivation (§8), rounding (§9), month lifecycle (§10–§11), auth.
 Does NOT handle: user-facing rendering (frontend), static hosting in production (Cloudflare Pages).
@@ -16,6 +16,22 @@ Does NOT handle: user-facing rendering (frontend), static hosting in production 
 - Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DJANGO_URLCONF`.
 - Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen --all-groups` in Docker (dev deps, including pytest, are installed in the image — acceptable for this project's scale).
 - Tests: `pytest` + `pytest-django` (Django's unittest runner is not used).
+
+## Shared utilities
+
+- `core/fields.py` — `MonthListField(JSONField)`: stores month numbers as JSON integers, returns `calendar.Month` instances on read. Use for any field that holds a list of calendar months.
+
+## SPEC → code naming
+
+SPEC uses Spanish field names; all code identifiers are English:
+
+| SPEC term | Code name |
+|---|---|
+| `fuente` | `payment_source` |
+| `TC` (Tarjeta de Crédito) | `CREDIT_CARD` |
+| `prepago_month` | `payoff_month` |
+
+Spanish labels only appear in i18n JSON files.
 
 ## Anti-patterns
 
