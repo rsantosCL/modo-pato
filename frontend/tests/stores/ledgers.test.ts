@@ -49,8 +49,20 @@ describe('ledgers store', () => {
     const member = { user_id: '1', email: 'a@a.com', display_name: 'Alice', role: 'owner', invited_at: '', joined_at: '' }
     mockResponse([member])
     const store = useLedgersStore()
+    store.activeLedger = ledger
     const members = await store.fetchMembers('1')
     expect(members).toHaveLength(1)
+  })
+
+  it('fetchMembers fetches ledger first when id does not match activeLedger', async () => {
+    const other = { ...ledger, id: '2', name: 'Personal' }
+    mockResponse(other)
+    mockResponse([])
+    const store = useLedgersStore()
+    store.activeLedger = ledger
+    await store.fetchMembers('2')
+    expect(store.activeLedger?.id).toBe('2')
+    expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 
   it('createInvite returns token', async () => {

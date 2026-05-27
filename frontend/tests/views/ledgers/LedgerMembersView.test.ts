@@ -27,12 +27,18 @@ const router = createRouter({
   ],
 })
 
-function plugins() {
-  return [i18n, router, createPinia()]
-}
+const ledger = { id: '1', name: 'Familia', kind: 'shared' as const, created_at: '', archived_at: null }
+
+let pinia = createPinia()
+function plugins() { return [i18n, router, pinia] }
 
 describe('LedgerMembersView', () => {
-  beforeEach(() => { setActivePinia(createPinia()); mockFetch.mockReset() })
+  beforeEach(() => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    useLedgersStore().activeLedger = ledger
+    mockFetch.mockReset()
+  })
 
   it('fetches and renders members on mount', async () => {
     await router.push('/ledgers/1')
