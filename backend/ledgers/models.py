@@ -26,6 +26,20 @@ class Ledger(UUIDModel):
         except LedgerMember.DoesNotExist:
             return None
 
+    def can_edit(self, user) -> bool:
+        membership = self.membership_for(user)
+        return membership is not None and membership.role in (MemberRole.OWNER, MemberRole.EDITOR)
+
+    @classmethod
+    def get_for_member(cls, pk, user) -> "Ledger | None":
+        try:
+            ledger = cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+        if ledger.membership_for(user) is None:
+            return None
+        return ledger
+
 
 class LedgerMember(models.Model):
     ledger = models.ForeignKey(Ledger, on_delete=models.CASCADE, related_name="members")
