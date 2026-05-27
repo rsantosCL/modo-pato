@@ -1,0 +1,34 @@
+{
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display name",
+    "login": "Sign in",
+    "signup": "Create account",
+    "logout": "Sign out",
+    "noAccount": "Don't have an account?",
+    "alreadyAccount": "Already have an account?"
+  },
+  "ledger": {
+    "title": "Ledgers",
+    "create": "New ledger",
+    "name": "Name",
+    "kind": "Type",
+    "kind_shared": "Shared",
+    "kind_personal": "Personal",
+    "members": "Members",
+    "invite": "Invite",
+    "role": "Role",
+    "role_owner": "Owner",
+    "role_editor": "Editor",
+    "role_viewer": "Viewer",
+    "inviteToken": "Share this token with your partner",
+    "noLedgers": "No ledgers yet. Create one to get started."
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong."
+  }
+}

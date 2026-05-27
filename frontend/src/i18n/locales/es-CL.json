@@ -1,0 +1,34 @@
+{
+  "auth": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "displayName": "Nombre",
+    "login": "Iniciar sesión",
+    "signup": "Crear cuenta",
+    "logout": "Cerrar sesión",
+    "noAccount": "¿No tienes una cuenta?",
+    "alreadyAccount": "¿Ya tienes una cuenta?"
+  },
+  "ledger": {
+    "title": "Presupuestos",
+    "create": "Nuevo presupuesto",
+    "name": "Nombre",
+    "kind": "Tipo",
+    "kind_shared": "Compartido",
+    "kind_personal": "Personal",
+    "members": "Miembros",
+    "invite": "Invitar",
+    "role": "Rol",
+    "role_owner": "Propietario",
+    "role_editor": "Editor",
+    "role_viewer": "Observador",
+    "inviteToken": "Comparte este código con tu pareja",
+    "noLedgers": "Sin presupuestos aún. Crea uno para comenzar."
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "loading": "Cargando…",
+    "error": "Ocurrió un error."
+  }
+}

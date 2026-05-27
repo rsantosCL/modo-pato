@@ -2,7 +2,7 @@
 
 ## Purpose & Scope
 
-Django 6 + DRF API server. Currently scaffolding only — no Django apps, no domain models from SPEC.md §5.
+Django 6 + DRF API server. v0.2.0: `core`, `accounts`, `ledgers` apps shipped. Catalog, currency, month logic not yet implemented.
 
 Handles: all domain logic, catalog query derivation (§8), rounding (§9), month lifecycle (§10–§11), auth.
 Does NOT handle: user-facing rendering (frontend), static hosting in production (Cloudflare Pages).
@@ -10,8 +10,9 @@ Does NOT handle: user-facing rendering (frontend), static hosting in production 
 ## Entry Points & Contracts
 
 - Two URL configurations selected by `DJANGO_URLCONF` env var:
-  - `config.urls_api` (api service, port 8000) — `GET /v1/health/` (+ future `/v1/...` routes). Default when env unset.
+  - `config.urls_api` (api service, port 8000) — `/v1/health/`, `/v1/auth/` (signup, login, refresh), `/v1/ledgers/` (CRUD, members, invites), `/v1/invites/` (accept). Default when env unset.
   - `config.urls_admin` (admin service, port 8001) — Django admin mounted at `/`. Production: `admin.modo-pato.rsantos.cl` gated by Cloudflare Access.
+- `AUTH_USER_MODEL = accounts.User` — custom user model (UUID pk, email login, no username). Must be set before the first migration; never revert to `auth.User`.
 - Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DJANGO_URLCONF`.
 - Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen --all-groups` in Docker (dev deps, including pytest, are installed in the image — acceptable for this project's scale).
 - Tests: `pytest` + `pytest-django` (Django's unittest runner is not used).

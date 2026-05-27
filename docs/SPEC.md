@@ -1322,6 +1322,7 @@ After entry, the user can pick any historical month from the sheets and compare 
 | 8 | Per-item rollover selection at month close: v1 is all-or-nothing. (Individual mid-month moves are supported via "Move to next month" — §10.3.) | Deferred |
 | 9 | Bank integration: out of scope. | Won't do |
 | 10 | Tax reporting: out of scope. | Won't do |
+| 11 | **API contract validation.** Generate an OpenAPI schema from the backend and use it to produce typed frontend API wrappers, so a missing or mistyped endpoint fails at compile time rather than at runtime. | Post-v1 |
 
 ---
 

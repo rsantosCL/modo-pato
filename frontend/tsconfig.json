@@ -16,7 +16,8 @@
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
     "jsx": "preserve",
-    "noEmit": true
+    "noEmit": true,
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]

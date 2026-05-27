@@ -1,6 +1,6 @@
 [project]
 name = "modo-pato-backend"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.0",
@@ -26,7 +26,7 @@ addopts = "--cov=. --cov-report=term-missing --cov-report=html:htmlcov"
 
 [tool.coverage.run]
 branch = true
-omit = ["tests/*", "manage.py", "*/migrations/*", "*/wsgi.py"]
+omit = ["tests/*", "manage.py", "*/migrations/*", "*/wsgi.py", "config/urls_admin.py"]
 
 [tool.coverage.report]
 fail_under = 90

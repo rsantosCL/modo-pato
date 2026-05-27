@@ -1,0 +1,13 @@
+:root {
+  --pico-font-size: 16px;
+}
+
+body {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+article > footer button[type=submit] {
+  width: auto;
+}

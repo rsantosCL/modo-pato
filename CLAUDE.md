@@ -4,7 +4,7 @@
 
 Personal/family budget app replacing two Google Sheets. Multi-user, multi-currency (CLP/CLF/USD), catalog-driven monthly projections with planned-vs-actual reconciliation.
 
-Greenfield project — pre-Phase 0 of the implementation plan (SPEC.md Appendix C). No domain models or business logic implemented yet.
+Currently at v0.2.0: auth (signup/login/JWT refresh), ledgers (CRUD, membership, invite tokens) are shipped. No catalog, month, or currency logic yet.
 
 ## Entry Points & Contracts
 
@@ -14,6 +14,10 @@ Greenfield project — pre-Phase 0 of the implementation plan (SPEC.md Appendix 
 - `docs/DEPLOYMENT.md` — infra plan: Hetzner VPS, Cloudflare Tunnel/Pages/Access, Neon Postgres, R2 backups.
 - `docs/ROADMAP.md` — versioned step plan from 0.0.1 (baseline) to 1.0.0 (production); each step is a minor bump in lockstep across backend + frontend. All user-facing docs live under `docs/`.
 - `V1-IMPLEMENTATION-PLAN.md` — agent execution companion to `docs/ROADMAP.md` (stays at repo root because it's agent-facing, not user-facing).
+
+## Conventions
+
+- Frontend npm installs must use `docker run --platform linux/amd64` (not `docker compose run`) to keep `package-lock.json` on linux/amd64, matching CI.
 
 ## Anti-patterns
 
