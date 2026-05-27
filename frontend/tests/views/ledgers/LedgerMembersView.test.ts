@@ -38,6 +38,17 @@ describe('LedgerMembersView', () => {
     setActivePinia(pinia)
     useLedgersStore().activeLedger = ledger
     mockFetch.mockReset()
+    HTMLDialogElement.prototype.showModal = vi.fn()
+    HTMLDialogElement.prototype.close = vi.fn()
+  })
+
+  it('invite button opens the dialog', async () => {
+    await router.push('/ledgers/1')
+    mockResponse([])
+    const wrapper = mount(LedgerMembersView, { global: { plugins: plugins() } })
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
   })
 
   it('fetches and renders members on mount', async () => {

@@ -37,10 +37,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         const auth = useAuthStore()
         await auth.refresh()
         return await doRequest<T>(path, options)
-      } catch {
-        const { useAuthStore } = await import('@/stores/auth')
-        useAuthStore().logout()
-        router.push('/login')
+      } catch (refreshError) {
+        if (refreshError instanceof ApiError && refreshError.status === 401) {
+          const { useAuthStore } = await import('@/stores/auth')
+          useAuthStore().logout()
+          router.push('/login')
+        }
         throw e
       }
     }
