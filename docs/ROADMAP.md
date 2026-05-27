@@ -42,7 +42,7 @@ No domain models, no business logic, no UI beyond the title.
 
 ---
 
-## 0.2.0 — Phase 0: Foundations (current)
+## 0.2.0 — Phase 0: Foundations
 
 **Goal:** Multi-user ledger access — sign in, create a ledger, invite a partner.
 
@@ -59,7 +59,7 @@ No domain models, no business logic, no UI beyond the title.
 
 ---
 
-## 0.3.0 — Phase 1: Catalog kernel
+## 0.3.0 — Phase 1: Catalog kernel (current)
 
 **Goal:** Build the foundation for all recurring items.
 

@@ -25,6 +25,8 @@ onMounted(async () => {
         <h2>{{ store.activeLedger.name }}</h2>
         <p>{{ t(`ledger.kind_${store.activeLedger.kind}`) }}</p>
         <router-link :to="`/ledgers/${store.activeLedger.id}/members`">{{ t('ledger.members') }}</router-link>
+        &ensp;·&ensp;
+        <router-link :to="`/ledgers/${store.activeLedger.id}/catalog`">{{ t('catalog.title') }}</router-link>
       </template>
     </section>
   </main>

@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'core',
     'accounts',
     'ledgers',
+    'catalog',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

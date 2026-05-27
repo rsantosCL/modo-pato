@@ -2,27 +2,44 @@
 
 ## Purpose & Scope
 
-Django 6 + DRF API server. v0.2.0: `core`, `accounts`, `ledgers` apps shipped. Catalog, currency, month logic not yet implemented.
+Django 6 + DRF API server. v0.3.0: `core`, `accounts`, `ledgers`, `catalog` apps shipped. Currency, month logic not yet implemented.
 
 Handles: all domain logic, catalog query derivation (§8), rounding (§9), month lifecycle (§10–§11), auth.
 Does NOT handle: user-facing rendering (frontend), static hosting in production (Cloudflare Pages).
 
 ## Entry Points & Contracts
 
-- Two URL configurations selected by `DJANGO_URLCONF` env var:
-  - `config.urls_api` (api service, port 8000) — `/v1/health/`, `/v1/auth/` (signup, login, refresh), `/v1/ledgers/` (CRUD, members, invites), `/v1/invites/` (accept). Default when env unset.
-  - `config.urls_admin` (admin service, port 8001) — Django admin mounted at `/`. Production: `admin.modo-pato.rsantos.cl` gated by Cloudflare Access.
-- `AUTH_USER_MODEL = accounts.User` — custom user model (UUID pk, email login, no username). Must be set before the first migration; never revert to `auth.User`.
-- Settings via `django-environ`: `DATABASE_URL`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DJANGO_URLCONF`.
-- Deps managed with `uv`: edit `pyproject.toml` → `uv lock` → `uv sync --frozen --all-groups` in Docker (dev deps, including pytest, are installed in the image — acceptable for this project's scale).
-- Tests: `pytest` + `pytest-django` (Django's unittest runner is not used).
+- `DJANGO_URLCONF` env selects URL conf:
+  - `config.urls_api` (port 8000) — `/v1/health/`, `/v1/auth/`, `/v1/ledgers/`, `/v1/ledgers/{id}/members/`, `/v1/ledgers/{id}/invites/`, `/v1/ledgers/{id}/catalog-items/`, `/v1/invites/`, `/v1/catalog-items/{id}/`, `/v1/catalog-items/{id}/revisions/`. Default. All nesting explicit in this file.
+  - `config.urls_admin` (port 8001) — Django admin at `/`. Production: gated by Cloudflare Access.
+- `AUTH_USER_MODEL = accounts.User` — UUID pk, email login. Must be set before first migration; never revert to `auth.User`.
+- Deps: `uv` — edit `pyproject.toml` → `uv lock` → `uv sync --frozen --all-groups`.
+- Tests: `pytest` + `pytest-django` only (never Django's unittest runner).
+
+## Shared utilities
+
+- `core/fields.py` → `MonthListField(JSONField)`: DB stores int list, Python returns `calendar.Month` list.
+- `ledgers/models.py` → `Ledger.get_for_member(pk, user) -> Ledger | None` (returns `None`; caller raises `NotFound`); `Ledger.can_edit(user) -> bool`.
+- `catalog/permissions.py` → `IsCatalogItemMember`, `CanEditCatalogItem`: object-level; delegate to `obj.ledger`.
+
+## SPEC → code naming
+
+SPEC uses Spanish; all code identifiers are English:
+
+| SPEC term | Code name |
+|---|---|
+| `fuente` | `payment_source` |
+| `TC` (Tarjeta de Crédito) | `CREDIT_CARD` |
+| `prepago_month` | `payoff_month` |
+
+Spanish labels only appear in i18n JSON files.
 
 ## Anti-patterns
 
 - Don't store derived fields (`end_month`, `valid_months`, `prepaid_installments`) — compute at read time (§5.1.1).
-- Don't round `actual_amount_*` or `amount_real` — only `Planificado` is rounded (§9.1, load-bearing rule).
-- Don't allow negative amounts via direct entry — only two system-generated paths: TC adjustment and savings retirement (§10.4).
-- Don't duplicate catalog items for time-varying values — use `CatalogItemRevision` with `effective_from_month` (§5.1, §13.5).
+- Don't round `amount_real` — only `Planificado` is rounded (§9.1, load-bearing).
+- Don't allow negative amounts via direct entry — only TC adjustment and savings retirement (§10.4).
+- Don't duplicate catalog items for time-varying values — use `CatalogItemRevision` (§5.1, §13.5).
+- Carry-over math uses raw per-item sums, never Resumen-smoothed values (§11.2).
 - Production Docker images must target `linux/arm64` (Hetzner CAX11 ARM VPS).
-- Carry-over and balance math use raw per-item sums, never Resumen-smoothed values (§11.2).
-- Don't add api and admin routes to the same URLconf — keep them isolated by service so an outage in one doesn't touch the other; admin auth is enforced by Cloudflare Access at the subdomain, not by path rules.
+- Api and admin URLconfs must stay isolated — never merge into one file.

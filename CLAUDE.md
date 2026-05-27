@@ -4,7 +4,7 @@
 
 Personal/family budget app replacing two Google Sheets. Multi-user, multi-currency (CLP/CLF/USD), catalog-driven monthly projections with planned-vs-actual reconciliation.
 
-Currently at v0.2.0: auth (signup/login/JWT refresh), ledgers (CRUD, membership, invite tokens) are shipped. No catalog, month, or currency logic yet.
+Currently at v0.3.0: auth, ledgers, and catalog (items + revisions, derived fields, §13.3 validation) are shipped. Currency engine, month views, and actuals not yet implemented.
 
 ## Entry Points & Contracts
 
