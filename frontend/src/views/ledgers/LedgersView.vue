@@ -9,8 +9,8 @@ const store = useLedgersStore()
 const name = ref('')
 const kind = ref<Ledger['kind']>('personal')
 const error = ref('')
-const showForm = ref(false)
 const loading = ref(true)
+const createDialog = ref<HTMLDialogElement | null>(null)
 
 onMounted(async () => {
   try {
@@ -20,12 +20,18 @@ onMounted(async () => {
   }
 })
 
+function openDialog() {
+  name.value = ''
+  kind.value = 'personal'
+  error.value = ''
+  createDialog.value?.showModal()
+}
+
 async function create() {
   error.value = ''
   try {
     await store.create(name.value, kind.value)
-    name.value = ''
-    showForm.value = false
+    createDialog.value?.close()
   } catch {
     error.value = t('common.error')
   }
@@ -36,27 +42,7 @@ async function create() {
   <main>
     <section>
       <h2>{{ t('ledger.title') }}</h2>
-      <button @click="showForm = !showForm">{{ t('ledger.create') }}</button>
-      <article v-if="showForm">
-        <form @submit.prevent="create">
-          <fieldset class="grid">
-            <label>
-              {{ t('ledger.name') }}
-              <input v-model="name" type="text" required />
-            </label>
-            <label>
-              {{ t('ledger.kind') }}
-              <select v-model="kind">
-                <option value="personal">{{ t('ledger.kind_personal') }}</option>
-                <option value="shared">{{ t('ledger.kind_shared') }}</option>
-              </select>
-            </label>
-          </fieldset>
-          <p v-if="error" aria-live="polite">{{ error }}</p>
-          <input type="submit" :value="t('common.save')" />
-          <input type="reset" :value="t('common.cancel')" @click="showForm = false" />
-        </form>
-      </article>
+      <button @click="openDialog">{{ t('ledger.create') }}</button>
     </section>
 
     <section :aria-busy="loading">
@@ -72,4 +58,33 @@ async function create() {
       </ul>
     </section>
   </main>
+
+  <dialog ref="createDialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" @click="createDialog?.close()"></button>
+        <h3>{{ t('ledger.create') }}</h3>
+      </header>
+      <form id="create-ledger-form" @submit.prevent="create">
+        <fieldset class="grid">
+          <label>
+            {{ t('ledger.name') }}
+            <input v-model="name" type="text" required autofocus data-1p-ignore />
+          </label>
+          <label>
+            {{ t('ledger.kind') }}
+            <select v-model="kind">
+              <option value="personal">{{ t('ledger.kind_personal') }}</option>
+              <option value="shared">{{ t('ledger.kind_shared') }}</option>
+            </select>
+          </label>
+        </fieldset>
+        <p v-if="error" aria-live="polite">{{ error }}</p>
+      </form>
+      <footer>
+        <button type="button" class="secondary" @click="createDialog?.close()">{{ t('common.cancel') }}</button>
+        <button type="submit" form="create-ledger-form">{{ t('common.save') }}</button>
+      </footer>
+    </article>
+  </dialog>
 </template>

@@ -13,6 +13,7 @@ const inviteToken = ref('')
 const inviteRole = ref<LedgerMember['role']>('editor')
 const error = ref('')
 const loading = ref(true)
+const inviteDialog = ref<HTMLDialogElement | null>(null)
 
 const ledgerId = route.params.id as string
 
@@ -24,11 +25,18 @@ onMounted(async () => {
   }
 })
 
+function openDialog() {
+  inviteRole.value = 'editor'
+  error.value = ''
+  inviteDialog.value?.showModal()
+}
+
 async function invite() {
   error.value = ''
   try {
     const result = await store.createInvite(ledgerId, inviteRole.value)
     inviteToken.value = result.token
+    inviteDialog.value?.close()
   } catch {
     error.value = t('common.error')
   }
@@ -39,6 +47,7 @@ async function invite() {
   <main>
     <section>
       <h2>{{ t('ledger.members') }}</h2>
+      <button @click="openDialog">{{ t('ledger.invite') }}</button>
       <div :aria-busy="loading">
         <table v-if="!loading && members.length">
           <thead>
@@ -57,26 +66,32 @@ async function invite() {
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section>
-      <h3>{{ t('ledger.invite') }}</h3>
-      <article>
-        <form @submit.prevent="invite">
-          <label>
-            {{ t('ledger.role') }}
-            <select v-model="inviteRole">
-              <option value="editor">{{ t('ledger.role_editor') }}</option>
-              <option value="viewer">{{ t('ledger.role_viewer') }}</option>
-            </select>
-          </label>
-          <p v-if="error" aria-live="polite">{{ error }}</p>
-          <input type="submit" :value="t('ledger.invite')" />
-        </form>
-      </article>
       <p v-if="inviteToken">
         {{ t('ledger.inviteToken') }}: <code>{{ inviteToken }}</code>
       </p>
     </section>
   </main>
+
+  <dialog ref="inviteDialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" @click="inviteDialog?.close()"></button>
+        <h3>{{ t('ledger.invite') }}</h3>
+      </header>
+      <form id="invite-member-form" @submit.prevent="invite">
+        <label>
+          {{ t('ledger.role') }}
+          <select v-model="inviteRole" autofocus>
+            <option value="editor">{{ t('ledger.role_editor') }}</option>
+            <option value="viewer">{{ t('ledger.role_viewer') }}</option>
+          </select>
+        </label>
+        <p v-if="error" aria-live="polite">{{ error }}</p>
+      </form>
+      <footer>
+        <button type="button" class="secondary" @click="inviteDialog?.close()">{{ t('common.cancel') }}</button>
+        <button type="submit" form="invite-member-form">{{ t('ledger.invite') }}</button>
+      </footer>
+    </article>
+  </dialog>
 </template>

@@ -32,7 +32,12 @@ function plugins() {
 }
 
 describe('LedgersView', () => {
-  beforeEach(() => { setActivePinia(createPinia()); mockFetch.mockReset() })
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    mockFetch.mockReset()
+    HTMLDialogElement.prototype.showModal = vi.fn()
+    HTMLDialogElement.prototype.close = vi.fn()
+  })
 
   it('fetches and renders ledgers on mount', async () => {
     mockResponse([{ id: '1', name: 'Familia', kind: 'shared', created_at: '', archived_at: null }])
@@ -60,14 +65,13 @@ describe('LedgersView', () => {
     expect(useLedgersStore().ledgers).toHaveLength(1)
   })
 
-  it('cancel hides the create form', async () => {
+  it('cancel closes the dialog', async () => {
     mockResponse([])
     const wrapper = mount(LedgersView, { global: { plugins: plugins() } })
     await flushPromises()
     await wrapper.find('button').trigger('click')
-    expect(wrapper.find('form').exists()).toBe(true)
-    await wrapper.find('input[type="reset"]').trigger('click')
-    expect(wrapper.find('form').exists()).toBe(false)
+    await wrapper.find('button[type="button"]').trigger('click')
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled()
   })
 
   it('shows error when create fails', async () => {
