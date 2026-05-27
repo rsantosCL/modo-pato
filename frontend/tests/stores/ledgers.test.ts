@@ -71,4 +71,46 @@ describe('ledgers store', () => {
     const result = await store.createInvite('1', 'editor')
     expect(result.token).toBe('abc123')
   })
+
+  it('update patches ledger and syncs store', async () => {
+    const updated = { ...ledger, name: 'Renamed' }
+    mockResponse(updated)
+    const store = useLedgersStore()
+    store.ledgers = [ledger]
+    store.activeLedger = ledger
+    const result = await store.update('1', { name: 'Renamed' })
+    expect(result.name).toBe('Renamed')
+    expect(store.ledgers[0].name).toBe('Renamed')
+    expect(store.activeLedger?.name).toBe('Renamed')
+  })
+
+  it('update does not touch activeLedger when id differs', async () => {
+    const other = { ...ledger, id: '2', name: 'Other' }
+    mockResponse({ ...other, name: 'Other renamed' })
+    const store = useLedgersStore()
+    store.ledgers = [ledger, other]
+    store.activeLedger = ledger
+    await store.update('2', { name: 'Other renamed' })
+    expect(store.activeLedger?.name).toBe('Familia')
+  })
+
+  it('fetchInvite returns invite detail', async () => {
+    const detail = { token: 'tok', role: 'editor', ledger_id: '1', ledger_name: 'Familia', invited_by: 'Alice' }
+    mockResponse(detail)
+    const store = useLedgersStore()
+    const result = await store.fetchInvite('tok')
+    expect(result.ledger_name).toBe('Familia')
+    expect(result.invited_by).toBe('Alice')
+  })
+
+  it('acceptInvite posts to accept endpoint', async () => {
+    mockResponse({ detail: 'Joined ledger.' })
+    const store = useLedgersStore()
+    const result = await store.acceptInvite('tok')
+    expect(result.detail).toBe('Joined ledger.')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/invites/tok/accept/'),
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
 })
