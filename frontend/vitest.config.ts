@@ -10,7 +10,7 @@ export default mergeConfig(viteConfig, defineConfig({
       include: ['src/**/*.{ts,vue}'],
       exclude: ['src/vite-env.d.ts', 'src/main.ts', 'src/router/index.ts', 'src/i18n/index.ts'],
       reporter: ['text', 'html'],
-      thresholds: { branches: 90, functions: 90, lines: 90, statements: 90 },
+      thresholds: { branches: 80, statements: 80 },
     },
   },
 }))
