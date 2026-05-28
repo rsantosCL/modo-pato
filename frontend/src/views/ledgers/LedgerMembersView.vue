@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useLedgersStore, type LedgerMember } from '@/stores/ledgers'
@@ -10,6 +10,7 @@ const store = useLedgersStore()
 
 const members = ref<LedgerMember[]>([])
 const inviteToken = ref('')
+const copied = ref(false)
 const inviteRole = ref<LedgerMember['role']>('editor')
 const error = ref('')
 const loading = ref(true)
@@ -31,6 +32,10 @@ function openDialog() {
   inviteDialog.value?.showModal()
 }
 
+const inviteUrl = computed(() =>
+  inviteToken.value ? `${window.location.origin}/invites/${inviteToken.value}` : ''
+)
+
 async function invite() {
   error.value = ''
   try {
@@ -40,6 +45,12 @@ async function invite() {
   } catch {
     error.value = t('common.error')
   }
+}
+
+async function copyLink() {
+  await navigator.clipboard.writeText(inviteUrl.value)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
 }
 </script>
 
@@ -66,9 +77,10 @@ async function invite() {
           </tbody>
         </table>
       </div>
-      <p v-if="inviteToken">
-        {{ t('ledger.inviteToken') }}: <code>{{ inviteToken }}</code>
-      </p>
+      <div v-if="inviteUrl">
+        <p>{{ t('ledger.inviteLink') }}: <code>{{ inviteUrl }}</code></p>
+        <button class="secondary" @click="copyLink">{{ copied ? t('ledger.linkCopied') : t('ledger.copyLink') }}</button>
+      </div>
     </section>
   </main>
 

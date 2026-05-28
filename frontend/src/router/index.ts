@@ -58,6 +58,7 @@ const router = createRouter({
         ],
       },
     },
+    { path: '/invites/:token', component: () => import('@/views/ledgers/InviteAcceptView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/ledgers' },
   ],
 })

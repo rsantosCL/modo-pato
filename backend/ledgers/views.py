@@ -59,6 +59,22 @@ class InviteCreateView(APIView):
         return Response(InviteTokenSerializer(invite).data, status=status.HTTP_201_CREATED)
 
 
+class InviteDetailView(APIView):
+    def get(self, request, token):
+        invite = InviteToken.objects.filter(
+            token=token, accepted_at__isnull=True
+        ).select_related("ledger", "created_by").first()
+        if invite is None:
+            raise NotFound("Invalid or already used invite token.")
+        return Response({
+            "token": invite.token,
+            "role": invite.role,
+            "ledger_id": str(invite.ledger.id),
+            "ledger_name": invite.ledger.name,
+            "invited_by": invite.created_by.display_name,
+        })
+
+
 class InviteAcceptView(APIView):
     def post(self, request, token):
         invite = InviteToken.objects.filter(token=token, accepted_at__isnull=True).first()

@@ -59,7 +59,7 @@ describe('LedgerMembersView', () => {
     expect(wrapper.text()).toContain('Alice')
   })
 
-  it('creates invite and shows token', async () => {
+  it('creates invite and shows shareable URL', async () => {
     await router.push('/ledgers/1')
     mockResponse([])
     const wrapper = mount(LedgerMembersView, { global: { plugins: plugins() } })
@@ -67,7 +67,21 @@ describe('LedgerMembersView', () => {
     mockResponse({ id: '1', token: 'abc123', role: 'editor', created_at: '' })
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.text()).toContain('abc123')
+    expect(wrapper.text()).toContain('/invites/abc123')
+  })
+
+  it('copy button writes invite URL to clipboard', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { clipboard: { writeText } })
+    await router.push('/ledgers/1')
+    mockResponse([])
+    const wrapper = mount(LedgerMembersView, { global: { plugins: plugins() } })
+    await flushPromises()
+    mockResponse({ id: '1', token: 'abc123', role: 'editor', created_at: '' })
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    await wrapper.find('button.secondary').trigger('click')
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('/invites/abc123'))
   })
 
   it('shows error when invite fails', async () => {

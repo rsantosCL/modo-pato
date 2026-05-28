@@ -130,6 +130,44 @@ def test_accept_invalid_token(auth_client, bob):
 
 
 @pytest.mark.django_db
+def test_get_invite_detail(auth_client, alice, bob, alice_ledger):
+    invite = InviteToken.objects.create(ledger=alice_ledger, created_by=alice, role=MemberRole.EDITOR)
+    c = auth_client(bob)
+    response = c.get(f"/v1/invites/{invite.token}/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ledger_name"] == alice_ledger.name
+    assert data["role"] == MemberRole.EDITOR
+    assert data["invited_by"] == alice.display_name
+    assert data["ledger_id"] == str(alice_ledger.id)
+
+
+@pytest.mark.django_db
+def test_get_invite_detail_invalid_token(auth_client, bob):
+    c = auth_client(bob)
+    response = c.get("/v1/invites/bad-token/")
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_get_invite_detail_already_accepted(auth_client, alice, bob, alice_ledger):
+    invite = InviteToken.objects.create(
+        ledger=alice_ledger, created_by=alice, role=MemberRole.EDITOR,
+        accepted_by=bob, accepted_at=timezone.now(),
+    )
+    c = auth_client(bob)
+    response = c.get(f"/v1/invites/{invite.token}/")
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_get_invite_detail_requires_auth(client, alice, alice_ledger):
+    invite = InviteToken.objects.create(ledger=alice_ledger, created_by=alice, role=MemberRole.EDITOR)
+    response = client.get(f"/v1/invites/{invite.token}/")
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
 def test_list_members_as_non_member_forbidden(auth_client, bob, alice_ledger):
     c = auth_client(bob)
     response = c.get(f"/v1/ledgers/{alice_ledger.id}/members/")
