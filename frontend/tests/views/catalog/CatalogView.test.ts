@@ -289,6 +289,83 @@ describe('CatalogView', () => {
     expect(wrapper.find('#edit-item-form input[type="checkbox"]').exists()).toBe(true)
   })
 
+  // ── Filter ──────────────────────────────────────────────────────────────────
+
+  it('filters items by name (case-insensitive)', async () => {
+    const gasoline = { ...COMBUSTIBLE, id: 'item-2', name: 'Gasolina' }
+    mockResponse([COMBUSTIBLE, gasoline])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('comb')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(wrapper.text()).not.toContain('Gasolina')
+  })
+
+  it('shows all items when filter is cleared', async () => {
+    const gasoline = { ...COMBUSTIBLE, id: 'item-2', name: 'Gasolina' }
+    mockResponse([COMBUSTIBLE, gasoline])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('comb')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('input[type="search"]').setValue('')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(wrapper.text()).toContain('Gasolina')
+  })
+
+  // ── Sort ─────────────────────────────────────────────────────────────────────
+
+  it('sorts items by name ascending on first header click', async () => {
+    const agua = { ...COMBUSTIBLE, id: 'item-2', name: 'Agua' }
+    mockResponse([COMBUSTIBLE, agua])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('th a').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('Agua')
+    expect(rows[1].text()).toContain('Combustible')
+  })
+
+  it('reverses to descending on second click of the same header', async () => {
+    const agua = { ...COMBUSTIBLE, id: 'item-2', name: 'Agua' }
+    mockResponse([COMBUSTIBLE, agua])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const nameLink = wrapper.find('th a')
+    await nameLink.trigger('click')
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('Combustible')
+    expect(rows[1].text()).toContain('Agua')
+  })
+
+  it('shows sort indicator on active column and removes it when column changes', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const nameLink = wrapper.find('th a')
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(nameLink.text()).toContain('↑')
+
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(nameLink.text()).toContain('↓')
+  })
+
   // ── Delete item ─────────────────────────────────────────────────────────────
 
   it('opens delete confirmation dialog on delete button click', async () => {

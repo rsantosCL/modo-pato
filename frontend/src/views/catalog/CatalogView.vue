@@ -54,14 +54,65 @@ interface CatalogItem {
 
 const loading = ref(true)
 const items = ref<CatalogItem[]>([])
+const filterQuery = ref('')
 
 const CATEGORIES: ItemCategory[] = ['income', 'essential', 'variable', 'provision']
 
-const itemsByCategory = computed(() =>
-  Object.fromEntries(
-    CATEGORIES.map(cat => [cat, items.value.filter(i => i.category === cat)])
+type SortKey = 'name' | 'amount' | 'currency' | 'frequency' | 'start_month' | 'total_installments' | 'end_month'
+const sortKey = ref<SortKey | null>(null)
+const sortAsc = ref(true)
+
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
+function sortIndicator(key: SortKey): string {
+  if (sortKey.value !== key) return ''
+  return sortAsc.value ? ' ↑' : ' ↓'
+}
+
+const itemsByCategory = computed(() => {
+  const query = filterQuery.value.trim().toLowerCase()
+  return Object.fromEntries(
+    CATEGORIES.map(cat => {
+      let list = items.value.filter(i =>
+        i.category === cat && (!query || i.name.toLowerCase().includes(query))
+      )
+      if (sortKey.value) {
+        const key = sortKey.value
+        list = [...list].sort((a, b) => {
+          let va: string | number
+          let vb: string | number
+          if (key === 'amount') {
+            const ra = activeRevision(a); const rb = activeRevision(b)
+            va = ra ? parseFloat(ra.amount_real) : -1
+            vb = rb ? parseFloat(rb.amount_real) : -1
+          } else if (key === 'total_installments') {
+            va = a.total_installments ?? Infinity
+            vb = b.total_installments ?? Infinity
+          } else if (key === 'end_month') {
+            va = a.end_month ?? '9999-99'
+            vb = b.end_month ?? '9999-99'
+          } else if (key === 'name') {
+            va = a.name.toLowerCase()
+            vb = b.name.toLowerCase()
+          } else {
+            va = a[key] as string
+            vb = b[key] as string
+          }
+          const cmp = va < vb ? -1 : va > vb ? 1 : 0
+          return sortAsc.value ? cmp : -cmp
+        })
+      }
+      return [cat, list]
+    })
   ) as Record<ItemCategory, CatalogItem[]>
-)
+})
 
 // ── Create item dialog ────────────────────────────────────────────────────────
 
@@ -298,6 +349,7 @@ onMounted(async () => {
     <section>
       <h2>{{ t('catalog.title') }}</h2>
       <button @click="openCreateDialog">{{ t('catalog.newItem') }}</button>
+      <input class="filter-input" v-model="filterQuery" type="search" :placeholder="t('catalog.filter')" />
     </section>
 
     <div :aria-busy="loading">
@@ -310,14 +362,14 @@ onMounted(async () => {
             <table>
               <thead>
                 <tr>
-                  <th>{{ t('catalog.col.name') }}</th>
-                  <th>{{ t('catalog.col.amount') }}</th>
-                  <th>{{ t('catalog.col.currency') }}</th>
-                  <th>{{ t('catalog.col.frequency') }}</th>
+                  <th><a href="#" @click.prevent="toggleSort('name')">{{ t('catalog.col.name') }}{{ sortIndicator('name') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('amount')">{{ t('catalog.col.amount') }}{{ sortIndicator('amount') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('currency')">{{ t('catalog.col.currency') }}{{ sortIndicator('currency') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('frequency')">{{ t('catalog.col.frequency') }}{{ sortIndicator('frequency') }}</a></th>
                   <th>{{ t('catalog.col.source') }}</th>
-                  <th>{{ t('catalog.col.startMonth') }}</th>
-                  <th>{{ t('catalog.col.installments') }}</th>
-                  <th>{{ t('catalog.col.endMonth') }}</th>
+                  <th><a href="#" @click.prevent="toggleSort('start_month')">{{ t('catalog.col.startMonth') }}{{ sortIndicator('start_month') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('total_installments')">{{ t('catalog.col.installments') }}{{ sortIndicator('total_installments') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('end_month')">{{ t('catalog.col.endMonth') }}{{ sortIndicator('end_month') }}</a></th>
                   <th></th>
                 </tr>
               </thead>
@@ -584,3 +636,9 @@ onMounted(async () => {
     </article>
   </dialog>
 </template>
+
+<style scoped>
+.filter-input {
+  margin-top: var(--pico-spacing);
+}
+</style>

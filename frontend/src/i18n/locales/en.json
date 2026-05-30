@@ -39,6 +39,7 @@
     "newItem": "New item",
     "editItem": "Edit",
     "noItems": "No items in this category.",
+    "filter": "Filter by name…",
     "deleteItem": "Delete",
     "deleteConfirm": "Delete \"{name}\"? This cannot be undone.",
     "revisions": "Revisions",
