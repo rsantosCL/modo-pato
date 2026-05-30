@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/lib/api'
+import MonthPicker from '@/components/MonthPicker.vue'
 import {
   validateCatalogItem,
   validateRevision,
@@ -405,7 +406,7 @@ onMounted(async () => {
         <fieldset class="grid">
           <label>
             {{ t('catalog.col.startMonth') }}
-            <input v-model="createForm.start_month" type="month" required />
+            <MonthPicker v-model="createForm.start_month" required />
             <small v-if="createErrors.start_month" aria-invalid="true">{{ createErrors.start_month }}</small>
           </label>
           <label>
@@ -480,7 +481,7 @@ onMounted(async () => {
           </label>
           <label>
             {{ t('catalog.col.startMonth') }}
-            <input v-model="editForm.start_month" type="month" required />
+            <MonthPicker v-model="editForm.start_month" required />
             <small v-if="editErrors.start_month" aria-invalid="true">{{ editErrors.start_month }}</small>
           </label>
         </fieldset>
@@ -493,7 +494,7 @@ onMounted(async () => {
           </label>
           <label v-if="editForm.category !== 'income'">
             {{ t('catalog.col.payoffMonth') }}
-            <input v-model="editForm.payoff_month" type="month" />
+            <MonthPicker :modelValue="editForm.payoff_month ?? ''" @update:modelValue="editForm.payoff_month = $event || null" />
             <small v-if="editErrors.payoff_month" aria-invalid="true">{{ editErrors.payoff_month }}</small>
           </label>
         </fieldset>
@@ -546,7 +547,7 @@ onMounted(async () => {
           <fieldset class="grid">
             <label>
               {{ t('catalog.effectiveFrom') }}
-              <input v-model="revisionForm.effective_from_month" type="month" required autofocus />
+              <MonthPicker v-model="revisionForm.effective_from_month" required />
               <small v-if="revisionErrors.effective_from_month" aria-invalid="true">{{ revisionErrors.effective_from_month }}</small>
             </label>
             <label>

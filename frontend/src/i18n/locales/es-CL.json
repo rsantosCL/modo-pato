@@ -77,6 +77,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "loading": "Cargando…",
-    "error": "Ocurrió un error."
+    "error": "Ocurrió un error.",
+    "currentMonth": "Mes actual",
+    "clear": "Borrar"
   }
 }

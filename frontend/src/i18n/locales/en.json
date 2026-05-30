@@ -77,6 +77,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "loading": "Loading…",
-    "error": "Something went wrong."
+    "error": "Something went wrong.",
+    "currentMonth": "Current month",
+    "clear": "Clear"
   }
 }

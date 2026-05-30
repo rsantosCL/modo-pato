@@ -102,7 +102,9 @@ describe('CatalogView', () => {
 
     await wrapper.find('button').trigger('click') // open dialog
     await wrapper.find('input[type="text"]').setValue('Combustible')
-    await wrapper.find('input[type="month"]').setValue('2025-01')
+    const [yearSel, monthSel] = wrapper.find('#create-item-form .month-picker').findAll('select')
+    await yearSel.setValue('2025')
+    await monthSel.setValue('01')
     await wrapper.find('input[step="any"]').setValue('100000')
 
     mockResponse(COMBUSTIBLE, 201)
@@ -159,7 +161,9 @@ describe('CatalogView', () => {
 
     await wrapper.find('button').trigger('click')
     await wrapper.find('input[type="text"]').setValue('Combustible')
-    await wrapper.find('input[type="month"]').setValue('2025-01')
+    const [yearSel, monthSel] = wrapper.find('#create-item-form .month-picker').findAll('select')
+    await yearSel.setValue('2025')
+    await monthSel.setValue('01')
     await wrapper.find('input[step="any"]').setValue('100000')
 
     mockResponse({ detail: 'error' }, 400)
@@ -249,7 +253,8 @@ describe('CatalogView', () => {
 
     const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
     await editBtn!.trigger('click')
-    await wrapper.find('#edit-item-form input[type="month"]').setValue('')
+    const [yearSel] = wrapper.find('#edit-item-form .month-picker').findAll('select')
+    await yearSel.setValue('')
     await wrapper.find('#edit-item-form').trigger('submit')
     await wrapper.vm.$nextTick()
 
@@ -358,7 +363,9 @@ describe('CatalogView', () => {
     await wrapper.vm.$nextTick()
 
     const addForm = wrapper.find('#add-revision-form')
-    await addForm.find('input[type="month"]').setValue('2026-01')
+    const [yearSel, monthSel] = addForm.find('.month-picker').findAll('select')
+    await yearSel.setValue('2026')
+    await monthSel.setValue('01')
     await addForm.find('input[step="any"]').setValue('120000')
 
     const newRev = { id: 'rev-2', effective_from_month: '2026-01-01', amount_real: '120000.0000', payment_source: 'CREDIT_CARD', note: '', created_at: '', created_by_id: 'u1' }
