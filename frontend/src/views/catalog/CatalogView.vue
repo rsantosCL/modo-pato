@@ -241,6 +241,32 @@ async function submitRevision() {
   }
 }
 
+// ── Delete item dialog ────────────────────────────────────────────────────────
+
+const deleteDialog = ref<HTMLDialogElement | null>(null)
+const itemToDelete = ref<CatalogItem | null>(null)
+const deleteSubmitting = ref(false)
+
+function openDeleteDialog(item: CatalogItem) {
+  itemToDelete.value = item
+  deleteDialog.value?.showModal()
+}
+
+async function submitDelete() {
+  if (!itemToDelete.value) return
+  deleteSubmitting.value = true
+  try {
+    await api.delete(`v1/catalog-items/${itemToDelete.value.id}/`)
+    items.value = items.value.filter(i => i.id !== itemToDelete.value!.id)
+    itemToDelete.value = null
+    deleteDialog.value?.close()
+  } catch {
+    // dialog stays open; user can retry or cancel
+  } finally {
+    deleteSubmitting.value = false
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function activeRevision(item: CatalogItem): CatalogItemRevision | null {
@@ -307,6 +333,7 @@ onMounted(async () => {
                   <td>
                     <button class="secondary" @click="openEditDialog(item)">{{ t('catalog.editItem') }}</button>
                     <button class="secondary" @click="openRevisionsDialog(item)">{{ t('catalog.revisions') }}</button>
+                    <button class="secondary" @click="openDeleteDialog(item)">{{ t('catalog.deleteItem') }}</button>
                   </td>
                 </tr>
               </tbody>
@@ -316,6 +343,21 @@ onMounted(async () => {
       </template>
     </div>
   </main>
+
+  <!-- Delete item dialog -->
+  <dialog ref="deleteDialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" @click="deleteDialog?.close()"></button>
+        <h3>{{ t('catalog.deleteItem') }}</h3>
+      </header>
+      <p>{{ t('catalog.deleteConfirm', { name: itemToDelete?.name }) }}</p>
+      <footer>
+        <button type="button" class="secondary" @click="deleteDialog?.close()">{{ t('common.cancel') }}</button>
+        <button type="button" class="contrast" :aria-busy="deleteSubmitting" @click="submitDelete">{{ t('catalog.deleteItem') }}</button>
+      </footer>
+    </article>
+  </dialog>
 
   <!-- Create item dialog -->
   <dialog ref="createDialog">

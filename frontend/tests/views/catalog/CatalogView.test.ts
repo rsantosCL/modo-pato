@@ -284,6 +284,53 @@ describe('CatalogView', () => {
     expect(wrapper.find('#edit-item-form input[type="checkbox"]').exists()).toBe(true)
   })
 
+  // ── Delete item ─────────────────────────────────────────────────────────────
+
+  it('opens delete confirmation dialog on delete button click', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+  })
+
+  it('calls DELETE endpoint, removes item from list, and closes dialog on confirm', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204, json: async () => undefined })
+    const confirmBtn = wrapper.find('dialog button.contrast')
+    await confirmBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Combustible')
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled()
+  })
+
+  it('keeps item in list and dialog open when DELETE request fails', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+    const confirmBtn = wrapper.find('dialog button.contrast')
+    await confirmBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(HTMLDialogElement.prototype.close).not.toHaveBeenCalled()
+  })
+
   // ── Revisions dialog ────────────────────────────────────────────────────────
 
   it('opens revisions dialog showing the item revision history', async () => {

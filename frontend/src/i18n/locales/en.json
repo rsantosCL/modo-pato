@@ -39,6 +39,8 @@
     "newItem": "New item",
     "editItem": "Edit",
     "noItems": "No items in this category.",
+    "deleteItem": "Delete",
+    "deleteConfirm": "Delete \"{name}\"? This cannot be undone.",
     "revisions": "Revisions",
     "addRevision": "Add revision",
     "firstRevision": "First revision",
