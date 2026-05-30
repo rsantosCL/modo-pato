@@ -39,6 +39,9 @@
     "newItem": "Nuevo ítem",
     "editItem": "Editar",
     "noItems": "No hay ítems en esta categoría.",
+    "filter": "Filtrar por nombre…",
+    "deleteItem": "Eliminar",
+    "deleteConfirm": "¿Eliminar \"{name}\"? Esta acción no se puede deshacer.",
     "revisions": "Revisiones",
     "addRevision": "Agregar revisión",
     "firstRevision": "Primera revisión",
@@ -75,6 +78,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "loading": "Cargando…",
-    "error": "Ocurrió un error."
+    "error": "Ocurrió un error.",
+    "currentMonth": "Mes actual",
+    "clear": "Borrar"
   }
 }

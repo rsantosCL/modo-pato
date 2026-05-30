@@ -102,7 +102,9 @@ describe('CatalogView', () => {
 
     await wrapper.find('button').trigger('click') // open dialog
     await wrapper.find('input[type="text"]').setValue('Combustible')
-    await wrapper.find('input[type="month"]').setValue('2025-01')
+    const [yearSel, monthSel] = wrapper.find('#create-item-form .month-picker').findAll('select')
+    await yearSel.setValue('2025')
+    await monthSel.setValue('01')
     await wrapper.find('input[step="any"]').setValue('100000')
 
     mockResponse(COMBUSTIBLE, 201)
@@ -159,7 +161,9 @@ describe('CatalogView', () => {
 
     await wrapper.find('button').trigger('click')
     await wrapper.find('input[type="text"]').setValue('Combustible')
-    await wrapper.find('input[type="month"]').setValue('2025-01')
+    const [yearSel, monthSel] = wrapper.find('#create-item-form .month-picker').findAll('select')
+    await yearSel.setValue('2025')
+    await monthSel.setValue('01')
     await wrapper.find('input[step="any"]').setValue('100000')
 
     mockResponse({ detail: 'error' }, 400)
@@ -249,7 +253,8 @@ describe('CatalogView', () => {
 
     const editBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.editItem)
     await editBtn!.trigger('click')
-    await wrapper.find('#edit-item-form input[type="month"]').setValue('')
+    const [yearSel] = wrapper.find('#edit-item-form .month-picker').findAll('select')
+    await yearSel.setValue('')
     await wrapper.find('#edit-item-form').trigger('submit')
     await wrapper.vm.$nextTick()
 
@@ -284,6 +289,130 @@ describe('CatalogView', () => {
     expect(wrapper.find('#edit-item-form input[type="checkbox"]').exists()).toBe(true)
   })
 
+  // ── Filter ──────────────────────────────────────────────────────────────────
+
+  it('filters items by name (case-insensitive)', async () => {
+    const gasoline = { ...COMBUSTIBLE, id: 'item-2', name: 'Gasolina' }
+    mockResponse([COMBUSTIBLE, gasoline])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('comb')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(wrapper.text()).not.toContain('Gasolina')
+  })
+
+  it('shows all items when filter is cleared', async () => {
+    const gasoline = { ...COMBUSTIBLE, id: 'item-2', name: 'Gasolina' }
+    mockResponse([COMBUSTIBLE, gasoline])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('comb')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('input[type="search"]').setValue('')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(wrapper.text()).toContain('Gasolina')
+  })
+
+  // ── Sort ─────────────────────────────────────────────────────────────────────
+
+  it('sorts items by name ascending on first header click', async () => {
+    const agua = { ...COMBUSTIBLE, id: 'item-2', name: 'Agua' }
+    mockResponse([COMBUSTIBLE, agua])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    await wrapper.find('th a').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('Agua')
+    expect(rows[1].text()).toContain('Combustible')
+  })
+
+  it('reverses to descending on second click of the same header', async () => {
+    const agua = { ...COMBUSTIBLE, id: 'item-2', name: 'Agua' }
+    mockResponse([COMBUSTIBLE, agua])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const nameLink = wrapper.find('th a')
+    await nameLink.trigger('click')
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].text()).toContain('Combustible')
+    expect(rows[1].text()).toContain('Agua')
+  })
+
+  it('shows sort indicator on active column and removes it when column changes', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const nameLink = wrapper.find('th a')
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(nameLink.text()).toContain('↑')
+
+    await nameLink.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(nameLink.text()).toContain('↓')
+  })
+
+  // ── Delete item ─────────────────────────────────────────────────────────────
+
+  it('opens delete confirmation dialog on delete button click', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+  })
+
+  it('calls DELETE endpoint, removes item from list, and closes dialog on confirm', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204, json: async () => undefined })
+    const confirmBtn = wrapper.find('dialog button.contrast')
+    await confirmBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Combustible')
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled()
+  })
+
+  it('keeps item in list and dialog open when DELETE request fails', async () => {
+    mockResponse([COMBUSTIBLE])
+    const wrapper = mount(CatalogView, { global: { plugins: plugins() } })
+    await flushPromises()
+
+    const deleteBtn = wrapper.findAll('button').find(b => b.text() === en.catalog.deleteItem)
+    await deleteBtn!.trigger('click')
+
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+    const confirmBtn = wrapper.find('dialog button.contrast')
+    await confirmBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Combustible')
+    expect(HTMLDialogElement.prototype.close).not.toHaveBeenCalled()
+  })
+
   // ── Revisions dialog ────────────────────────────────────────────────────────
 
   it('opens revisions dialog showing the item revision history', async () => {
@@ -311,7 +440,9 @@ describe('CatalogView', () => {
     await wrapper.vm.$nextTick()
 
     const addForm = wrapper.find('#add-revision-form')
-    await addForm.find('input[type="month"]').setValue('2026-01')
+    const [yearSel, monthSel] = addForm.find('.month-picker').findAll('select')
+    await yearSel.setValue('2026')
+    await monthSel.setValue('01')
     await addForm.find('input[step="any"]').setValue('120000')
 
     const newRev = { id: 'rev-2', effective_from_month: '2026-01-01', amount_real: '120000.0000', payment_source: 'CREDIT_CARD', note: '', created_at: '', created_by_id: 'u1' }

@@ -19,6 +19,9 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 **Views / tests:** `src/views/` mirrors backend apps (`auth/` ↔ accounts, `ledgers/` ↔ ledgers, `catalog/` ↔ catalog). `tests/` mirrors `src/` one-to-one. Note: `auth/` not `accounts/` — frontend only exposes auth flows.
 
+**Shared components:** `src/components/` holds reusable SFCs used across multiple views. Components here must be `v-model`-compatible where they wrap a form element, use `<script setup lang="ts">`, and rely on `useI18n` for any locale-sensitive rendering rather than hardcoding strings. Current components:
+- `MonthPicker.vue` — two `<select>` elements (year + month) rendered via `Intl.DateTimeFormat` so month names respect the active vue-i18n locale. `modelValue` / `emit('update:modelValue')` interface matches `<input type="month">` (`YYYY-MM` string or `''`). Use `class="month-picker"` on the root `<span>` to scope test selectors.
+
 **Breadcrumbs:** each route declares its own `meta.breadcrumbs: BreadcrumbFn`. `App.vue` evaluates generically — never add route-specific logic there. Omit on routes with no breadcrumb (auth pages, `/ledgers`).
 
 **View template structure:**

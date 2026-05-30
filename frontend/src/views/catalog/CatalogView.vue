@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/lib/api'
+import MonthPicker from '@/components/MonthPicker.vue'
 import {
   validateCatalogItem,
   validateRevision,
@@ -53,14 +54,65 @@ interface CatalogItem {
 
 const loading = ref(true)
 const items = ref<CatalogItem[]>([])
+const filterQuery = ref('')
 
 const CATEGORIES: ItemCategory[] = ['income', 'essential', 'variable', 'provision']
 
-const itemsByCategory = computed(() =>
-  Object.fromEntries(
-    CATEGORIES.map(cat => [cat, items.value.filter(i => i.category === cat)])
+type SortKey = 'name' | 'amount' | 'currency' | 'frequency' | 'start_month' | 'total_installments' | 'end_month'
+const sortKey = ref<SortKey | null>(null)
+const sortAsc = ref(true)
+
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = key
+    sortAsc.value = true
+  }
+}
+
+function sortIndicator(key: SortKey): string {
+  if (sortKey.value !== key) return ''
+  return sortAsc.value ? ' ↑' : ' ↓'
+}
+
+const itemsByCategory = computed(() => {
+  const query = filterQuery.value.trim().toLowerCase()
+  return Object.fromEntries(
+    CATEGORIES.map(cat => {
+      let list = items.value.filter(i =>
+        i.category === cat && (!query || i.name.toLowerCase().includes(query))
+      )
+      if (sortKey.value) {
+        const key = sortKey.value
+        list = [...list].sort((a, b) => {
+          let va: string | number
+          let vb: string | number
+          if (key === 'amount') {
+            const ra = activeRevision(a); const rb = activeRevision(b)
+            va = ra ? parseFloat(ra.amount_real) : -1
+            vb = rb ? parseFloat(rb.amount_real) : -1
+          } else if (key === 'total_installments') {
+            va = a.total_installments ?? Infinity
+            vb = b.total_installments ?? Infinity
+          } else if (key === 'end_month') {
+            va = a.end_month ?? '9999-99'
+            vb = b.end_month ?? '9999-99'
+          } else if (key === 'name') {
+            va = a.name.toLowerCase()
+            vb = b.name.toLowerCase()
+          } else {
+            va = a[key] as string
+            vb = b[key] as string
+          }
+          const cmp = va < vb ? -1 : va > vb ? 1 : 0
+          return sortAsc.value ? cmp : -cmp
+        })
+      }
+      return [cat, list]
+    })
   ) as Record<ItemCategory, CatalogItem[]>
-)
+})
 
 // ── Create item dialog ────────────────────────────────────────────────────────
 
@@ -241,6 +293,32 @@ async function submitRevision() {
   }
 }
 
+// ── Delete item dialog ────────────────────────────────────────────────────────
+
+const deleteDialog = ref<HTMLDialogElement | null>(null)
+const itemToDelete = ref<CatalogItem | null>(null)
+const deleteSubmitting = ref(false)
+
+function openDeleteDialog(item: CatalogItem) {
+  itemToDelete.value = item
+  deleteDialog.value?.showModal()
+}
+
+async function submitDelete() {
+  if (!itemToDelete.value) return
+  deleteSubmitting.value = true
+  try {
+    await api.delete(`v1/catalog-items/${itemToDelete.value.id}/`)
+    items.value = items.value.filter(i => i.id !== itemToDelete.value!.id)
+    itemToDelete.value = null
+    deleteDialog.value?.close()
+  } catch {
+    // dialog stays open; user can retry or cancel
+  } finally {
+    deleteSubmitting.value = false
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function activeRevision(item: CatalogItem): CatalogItemRevision | null {
@@ -271,6 +349,7 @@ onMounted(async () => {
     <section>
       <h2>{{ t('catalog.title') }}</h2>
       <button @click="openCreateDialog">{{ t('catalog.newItem') }}</button>
+      <input class="filter-input" v-model="filterQuery" type="search" :placeholder="t('catalog.filter')" />
     </section>
 
     <div :aria-busy="loading">
@@ -283,14 +362,14 @@ onMounted(async () => {
             <table>
               <thead>
                 <tr>
-                  <th>{{ t('catalog.col.name') }}</th>
-                  <th>{{ t('catalog.col.amount') }}</th>
-                  <th>{{ t('catalog.col.currency') }}</th>
-                  <th>{{ t('catalog.col.frequency') }}</th>
+                  <th><a href="#" @click.prevent="toggleSort('name')">{{ t('catalog.col.name') }}{{ sortIndicator('name') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('amount')">{{ t('catalog.col.amount') }}{{ sortIndicator('amount') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('currency')">{{ t('catalog.col.currency') }}{{ sortIndicator('currency') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('frequency')">{{ t('catalog.col.frequency') }}{{ sortIndicator('frequency') }}</a></th>
                   <th>{{ t('catalog.col.source') }}</th>
-                  <th>{{ t('catalog.col.startMonth') }}</th>
-                  <th>{{ t('catalog.col.installments') }}</th>
-                  <th>{{ t('catalog.col.endMonth') }}</th>
+                  <th><a href="#" @click.prevent="toggleSort('start_month')">{{ t('catalog.col.startMonth') }}{{ sortIndicator('start_month') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('total_installments')">{{ t('catalog.col.installments') }}{{ sortIndicator('total_installments') }}</a></th>
+                  <th><a href="#" @click.prevent="toggleSort('end_month')">{{ t('catalog.col.endMonth') }}{{ sortIndicator('end_month') }}</a></th>
                   <th></th>
                 </tr>
               </thead>
@@ -307,6 +386,7 @@ onMounted(async () => {
                   <td>
                     <button class="secondary" @click="openEditDialog(item)">{{ t('catalog.editItem') }}</button>
                     <button class="secondary" @click="openRevisionsDialog(item)">{{ t('catalog.revisions') }}</button>
+                    <button class="secondary" @click="openDeleteDialog(item)">{{ t('catalog.deleteItem') }}</button>
                   </td>
                 </tr>
               </tbody>
@@ -316,6 +396,21 @@ onMounted(async () => {
       </template>
     </div>
   </main>
+
+  <!-- Delete item dialog -->
+  <dialog ref="deleteDialog">
+    <article>
+      <header>
+        <button aria-label="Close" rel="prev" @click="deleteDialog?.close()"></button>
+        <h3>{{ t('catalog.deleteItem') }}</h3>
+      </header>
+      <p>{{ t('catalog.deleteConfirm', { name: itemToDelete?.name }) }}</p>
+      <footer>
+        <button type="button" class="secondary" @click="deleteDialog?.close()">{{ t('common.cancel') }}</button>
+        <button type="button" class="contrast" :aria-busy="deleteSubmitting" @click="submitDelete">{{ t('catalog.deleteItem') }}</button>
+      </footer>
+    </article>
+  </dialog>
 
   <!-- Create item dialog -->
   <dialog ref="createDialog">
@@ -363,7 +458,7 @@ onMounted(async () => {
         <fieldset class="grid">
           <label>
             {{ t('catalog.col.startMonth') }}
-            <input v-model="createForm.start_month" type="month" required />
+            <MonthPicker v-model="createForm.start_month" required />
             <small v-if="createErrors.start_month" aria-invalid="true">{{ createErrors.start_month }}</small>
           </label>
           <label>
@@ -438,7 +533,7 @@ onMounted(async () => {
           </label>
           <label>
             {{ t('catalog.col.startMonth') }}
-            <input v-model="editForm.start_month" type="month" required />
+            <MonthPicker v-model="editForm.start_month" required />
             <small v-if="editErrors.start_month" aria-invalid="true">{{ editErrors.start_month }}</small>
           </label>
         </fieldset>
@@ -451,7 +546,7 @@ onMounted(async () => {
           </label>
           <label v-if="editForm.category !== 'income'">
             {{ t('catalog.col.payoffMonth') }}
-            <input v-model="editForm.payoff_month" type="month" />
+            <MonthPicker :modelValue="editForm.payoff_month ?? ''" @update:modelValue="editForm.payoff_month = $event || null" />
             <small v-if="editErrors.payoff_month" aria-invalid="true">{{ editErrors.payoff_month }}</small>
           </label>
         </fieldset>
@@ -504,7 +599,7 @@ onMounted(async () => {
           <fieldset class="grid">
             <label>
               {{ t('catalog.effectiveFrom') }}
-              <input v-model="revisionForm.effective_from_month" type="month" required autofocus />
+              <MonthPicker v-model="revisionForm.effective_from_month" required />
               <small v-if="revisionErrors.effective_from_month" aria-invalid="true">{{ revisionErrors.effective_from_month }}</small>
             </label>
             <label>
@@ -541,3 +636,9 @@ onMounted(async () => {
     </article>
   </dialog>
 </template>
+
+<style scoped>
+.filter-input {
+  margin-top: var(--pico-spacing);
+}
+</style>
