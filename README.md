@@ -7,7 +7,7 @@ A personal/family budget app: multi-user, multi-currency (CLP / CLF / USD), with
 ## Stack
 
 - **Backend:** Django + Django REST Framework, PostgreSQL 16, `pytest` + `pytest-django` for tests.
-- **Frontend:** Vue 3 + TypeScript + [Pico.css](https://picocss.com/), Vitest for tests. Vue Router, Pinia, and vue-i18n (bilingual `en` / `es-CL`) land in `0.2.0`.
+- **Frontend:** Vue 3 + TypeScript + [Pico.css](https://picocss.com/), Vitest for tests. Vue Router, Pinia, vue-i18n (bilingual `en` / `es-CL`).
 - **Dev environment:** Docker Compose — one Postgres, two Django services (`backend` for the API on `:8000`, `admin` for Django admin on `:8001`), and Vite for the frontend on `:5173`.
 - **Production target:** Hetzner CAX11 (ARM) behind Cloudflare Tunnel, Cloudflare Pages for the SPA, Neon Postgres, R2 for backups. Full plan in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
@@ -36,21 +36,15 @@ The `backend` and `admin` containers run from the same image; the URL configurat
 ### Common commands
 
 ```bash
-# Backend tests (with branch coverage)
-docker compose run --rm backend uv run pytest
-
-# Frontend type-check
-docker compose run --rm frontend npm run type-check
-
-# Frontend tests (with branch coverage)
-docker compose run --rm frontend npm run test:coverage
-
-# Frontend production build
-docker compose run --rm frontend npm run build
-
-# Create a Django superuser to log into admin
-docker compose run --rm backend python manage.py createsuperuser
+just test             # Run all tests (backend + frontend)
+just test-backend     # Backend tests with branch coverage
+just test-frontend    # Frontend tests with branch coverage
+just createsuperuser  # Create a Django superuser to log into admin
+just migrate          # Run Django migrations
+just logs             # Follow all service logs
 ```
+
+Run `just` (no arguments) to list every available shortcut.
 
 ## Where to read next
 
