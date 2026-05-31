@@ -27,9 +27,9 @@ const breadcrumbs = computed(() => {
       <ul>
         <li><strong>Modo Pato</strong></li>
       </ul>
-      <ul v-if="auth.isAuthenticated">
+      <ul>
         <ThemeToggle />
-        <li class="nav-separator"><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
+        <li v-if="auth.isAuthenticated" class="nav-separator"><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
       </ul>
     </nav>
     <nav v-if="breadcrumbs.length" aria-label="breadcrumb">
