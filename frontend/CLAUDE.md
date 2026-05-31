@@ -21,6 +21,12 @@ Does NOT handle: domain logic, currency conversion, rounding — all server-side
 
 **Shared components:** `src/components/` holds reusable SFCs used across multiple views. Components here must be `v-model`-compatible where they wrap a form element, use `<script setup lang="ts">`, and rely on `useI18n` for any locale-sensitive rendering rather than hardcoding strings. Current components:
 - `MonthPicker.vue` — two `<select>` elements (year + month) rendered via `Intl.DateTimeFormat` so month names respect the active vue-i18n locale. `modelValue` / `emit('update:modelValue')` interface matches `<input type="month">` (`YYYY-MM` string or `''`). Use `class="month-picker"` on the root `<span>` to scope test selectors.
+- `ThemeToggle.vue` — `[Auto] [Light] [Dark]` links rendered as `<li>` fragments directly in the nav `<ul>`. Reads/writes `useThemeStore`. Active link marked with `aria-current="true"`.
+
+**Stores:** `src/stores/` holds Pinia stores using the composition API style (`defineStore('name', () => { ... })`). Use a store for global client state that must survive route changes or be shared across components. Current stores:
+- `auth.ts` — tokens, user identity, login/logout/refresh. Source of truth for `isAuthenticated`.
+- `ledgers.ts` — ledger list and active ledger.
+- `theme.ts` — user's light/dark/auto preference. Writes `data-theme` on `<html>` and persists to `localStorage`. Do not duplicate theme application logic elsewhere; the anti-FOUC script in `index.html` handles the initial paint before Vue mounts.
 
 **Breadcrumbs:** each route declares its own `meta.breadcrumbs: BreadcrumbFn`. `App.vue` evaluates generically — never add route-specific logic there. Omit on routes with no breadcrumb (auth pages, `/ledgers`).
 

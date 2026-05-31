@@ -74,6 +74,11 @@
       "note": "Nota"
     }
   },
+  "theme": {
+    "auto": "Auto",
+    "light": "Claro",
+    "dark": "Oscuro"
+  },
   "common": {
     "save": "Guardar",
     "cancel": "Cancelar",

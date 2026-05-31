@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -27,7 +28,8 @@ const breadcrumbs = computed(() => {
         <li><strong>Modo Pato</strong></li>
       </ul>
       <ul v-if="auth.isAuthenticated">
-        <li><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
+        <ThemeToggle />
+        <li class="nav-separator"><a href="#" @click.prevent="logout">{{ t('auth.logout') }}</a></li>
       </ul>
     </nav>
     <nav v-if="breadcrumbs.length" aria-label="breadcrumb">
