@@ -7,7 +7,7 @@ import App from '../src/App.vue'
 import { useAuthStore } from '../src/stores/auth'
 
 const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:p(.*)', component: { template: '<div />' } }] })
-const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: { auth: { logout: 'Sign out' }, ledger: { title: 'Ledgers' } } } })
+const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: { auth: { logout: 'Sign out' }, ledger: { title: 'Ledgers' }, theme: { auto: 'Auto', light: 'Light', dark: 'Dark' } } } })
 
 describe('App', () => {
   beforeEach(() => setActivePinia(createPinia()))
@@ -24,7 +24,8 @@ describe('App', () => {
     ;(auth as any).accessToken = 'tok'
     const wrapper = mount(App, { global: { plugins: [pinia, router, i18n] } })
     expect(wrapper.text()).toContain('Sign out')
-    await wrapper.find('a[href="#"]').trigger('click')
+    const logoutLink = wrapper.findAll('a[href="#"]').find(a => a.text() === 'Sign out')!
+    await logoutLink.trigger('click')
     expect(auth.isAuthenticated).toBe(false)
   })
 })
