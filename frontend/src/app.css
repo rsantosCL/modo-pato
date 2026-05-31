@@ -11,3 +11,20 @@ body {
 article > footer button[type=submit] {
   width: auto;
 }
+
+.theme-option a {
+  color: var(--pico-muted-color);
+}
+
+.theme-option a[aria-current="true"] {
+  color: var(--pico-primary);
+  font-weight: bold;
+  text-decoration: none;
+  cursor: default;
+}
+
+.nav-separator {
+  border-inline-start: 1px solid var(--pico-muted-border-color);
+  padding-inline-start: 0.75rem;
+  margin-inline-start: 0.25rem;
+}
